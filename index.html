@@ -40,8 +40,7 @@
     .tab-content.active { display: block; }
     pre { background: #0d1117; padding: 1rem; border-radius: 8px; overflow-x: auto; max-height: 500px; font-size: 0.85rem; color: #c9d1d9; white-space: pre-wrap; word-break: break-word; }
     iframe { width: 100%; height: 500px; border: 1px solid var(--border); border-radius: 8px; background: white; }
-    .status { margin-top: 1rem; padding: 0.8rem; border-radius: 8px; text-align: center; font-weight: 500; display: none; animation: fadeIn 0.3s; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .status { margin-top: 1rem; padding: 0.8rem; border-radius: 8px; text-align: center; font-weight: 500; display: none; }
     .status.loading { display: block; background: var(--loading); color: #bfdbfe; }
     .status.success { display: block; background: #064e3b; color: #6ee7b7; }
     .status.error { display: block; background: #450a0a; color: #fca5a5; }
@@ -50,15 +49,12 @@
     .actions button { flex: 1; min-width: 120px; background: var(--card); border: 1px solid var(--border); color: var(--text); font-weight: 500; }
     .actions button:hover:not(:disabled) { background: var(--border); }
     .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); border: 2px dashed var(--border); border-radius: 10px; margin-top: 1rem; }
-    .badge { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem; margin-left: 0.5rem; vertical-align: middle; }
+    .badge { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem; margin-left: 0.5rem; }
     .note { font-size: 0.8rem; color: var(--text-muted); margin-top: -0.5rem; margin-bottom: 1rem; }
     .streaming-indicator { display: none; align-items: center; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); }
     .streaming-indicator.active { display: flex; }
     .dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 1.5s infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-    .raw-output { background: #1a1f2e; padding: 1rem; border-radius: 8px; margin-top: 1rem; border-left: 4px solid var(--warning); }
-    .raw-output h4 { color: var(--warning); margin-bottom: 0.5rem; }
-    .char-count { font-size: 0.75rem; color: var(--text-muted); text-align: right; margin-top: -0.5rem; margin-bottom: 0.5rem; }
   </style>
 </head>
 <body>
@@ -66,17 +62,14 @@
   <p class="subtitle">Génère des sites WordPress complets (HTML + PHP) en quelques secondes</p>
 
   <div class="container">
-    <!-- Gauche : Formulaire -->
     <div class="card">
       <h3>⚙️ Configuration</h3>
       <form id="generatorForm">
         <label for="siteName">Nom du site</label>
-        <input type="text" id="siteName" required placeholder="Ex: Mon Portfolio Créatif" maxlength="100">
-        <div class="char-count" id="nameCount">0/100</div>
+        <input type="text" id="siteName" required placeholder="Ex: Mon Portfolio Créatif">
 
         <label for="siteDesc">Description / Objectif</label>
-        <textarea id="siteDesc" rows="4" required placeholder="Ex: Site vitrine pour photographe avec galerie et formulaire de contact" maxlength="1000"></textarea>
-        <div class="char-count" id="descCount">0/1000</div>
+        <textarea id="siteDesc" rows="3" required placeholder="Ex: Site vitrine pour photographe"></textarea>
 
         <label for="siteType">Type de site</label>
         <select id="siteType">
@@ -86,8 +79,6 @@
           <option value="Landing Page">Landing Page</option>
           <option value="Restaurant">Restaurant</option>
           <option value="SaaS">SaaS</option>
-          <option value="Agence">Agence</option>
-          <option value="Association">Association</option>
         </select>
 
         <label for="siteStyle">Style visuel</label>
@@ -96,65 +87,51 @@
           <option value="Dark premium">Dark premium</option>
           <option value="Coloré">Coloré</option>
           <option value="Classique">Classique</option>
-          <option value="Rétro">Rétro</option>
-          <option value="Corporate">Corporate</option>
         </select>
 
         <label for="model">Modèle Mistral</label>
         <select id="model">
-          <option value="mistral-large-latest">Mistral Large (recommandé)</option>
+          <option value="mistral-large-latest">Mistral Large</option>
           <option value="mistral-medium-latest">Mistral Medium</option>
-          <option value="mistral-small-latest">Mistral Small (rapide)</option>
-          <option value="open-mistral-7b">Mistral 7B (open)</option>
+          <option value="mistral-small-latest">Mistral Small</option>
         </select>
 
-        <p class="note">🔒 La clé API est gérée automatiquement côté serveur (Vercel). Aucun champ à remplir.</p>
-        <button type="submit" id="generateBtn">✨ Générer le site WordPress</button>
+        <p class="note">🔒 Clé API gérée côté serveur (Vercel)</p>
+        <button type="submit" id="generateBtn">✨ Générer</button>
         <div class="streaming-indicator" id="streamingIndicator">
           <span class="dot"></span>
-          <span>Génération en temps réel...</span>
+          <span>Génération en cours...</span>
         </div>
       </form>
     </div>
 
-    <!-- Droite : Résultat -->
     <div class="card">
       <div class="tabs">
         <button class="tab active" data-tab="preview">Aperçu</button>
         <button class="tab" data-tab="html">Code HTML</button>
         <button class="tab" data-tab="php">PHP / WordPress</button>
-        <button class="tab" data-tab="raw">Réponse brute</button>
       </div>
 
       <div id="previewTab" class="tab-content active">
         <iframe id="previewFrame" sandbox="allow-same-origin allow-scripts"></iframe>
       </div>
       <div id="htmlTab" class="tab-content">
-        <pre id="htmlCode">Le code HTML apparaîtra ici après génération...</pre>
+        <pre id="htmlCode">Le code HTML apparaîtra ici...</pre>
       </div>
       <div id="phpTab" class="tab-content">
-        <pre id="phpCode">Le code PHP apparaîtra ici après génération...</pre>
-      </div>
-      <div id="rawTab" class="tab-content">
-        <pre id="rawCode">La réponse complète de l'IA apparaîtra ici...</pre>
+        <pre id="phpCode">Le code PHP apparaîtra ici...</pre>
       </div>
 
       <div id="status" class="status"></div>
 
-      <div id="rawOutputSection" class="raw-output" style="display: none;">
-        <h4>⚠️ Extraction difficile</h4>
-        <p>L'IA n'a pas formaté sa réponse comme attendu. Voici le contenu brut détecté :</p>
-      </div>
-
       <div class="actions">
         <button id="copyBtn" disabled>📋 Copier</button>
         <button id="downloadBtn" disabled>⬇️ Télécharger</button>
-        <button id="downloadZipBtn" disabled>📦 Télécharger le thème (.zip)</button>
+        <button id="downloadZipBtn" disabled>📦 Télécharger ZIP</button>
       </div>
 
       <div id="emptyState" class="empty-state">
         <p>🔍 Aucun site généré</p>
-        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Configure les paramètres puis clique sur "Générer"</p>
       </div>
     </div>
   </div>
@@ -166,73 +143,40 @@
       const statusEl = document.getElementById('status');
       const emptyState = document.getElementById('emptyState');
       const streamingIndicator = document.getElementById('streamingIndicator');
-      const rawOutputSection = document.getElementById('rawOutputSection');
       const tabs = document.querySelectorAll('.tab');
-      const tabContents = {
-        preview: document.getElementById('previewTab'),
-        html: document.getElementById('htmlTab'),
-        php: document.getElementById('phpTab'),
-        raw: document.getElementById('rawTab')
-      };
       const previewFrame = document.getElementById('previewFrame');
       const htmlCodeEl = document.getElementById('htmlCode');
       const phpCodeEl = document.getElementById('phpCode');
-      const rawCodeEl = document.getElementById('rawCode');
-      const copyBtn = document.getElementById('copyBtn');
-      const downloadBtn = document.getElementById('downloadBtn');
-      const downloadZipBtn = document.getElementById('downloadZipBtn');
-      const nameInput = document.getElementById('siteName');
-      const descInput = document.getElementById('siteDesc');
-      const nameCount = document.getElementById('nameCount');
-      const descCount = document.getElementById('descCount');
+      let currentOutput = { html: '', php: '' };
 
-      let currentOutput = { html: '', php: '', css: '', raw: '' };
-
-      // Compteur de caractères
-      nameInput.addEventListener('input', () => {
-        nameCount.textContent = `${nameInput.value.length}/100`;
-      });
-      descInput.addEventListener('input', () => {
-        descCount.textContent = `${descInput.value.length}/1000`;
-      });
-
-      // Gestion des onglets
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
           tabs.forEach(t => t.classList.remove('active'));
           tab.classList.add('active');
-          Object.values(tabContents).forEach(c => c.classList.remove('active'));
-          tabContents[tab.dataset.tab].classList.add('active');
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
         });
       });
 
-      // Soumission du formulaire
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const siteName = nameInput.value.trim();
-        const siteDesc = descInput.value.trim();
+        const siteName = document.getElementById('siteName').value.trim();
+        const siteDesc = document.getElementById('siteDesc').value.trim();
         const siteType = document.getElementById('siteType').value;
         const siteStyle = document.getElementById('siteStyle').value;
         const model = document.getElementById('model').value;
 
-        if (!siteName || !siteDesc) {
-          showStatus('⚠️ Veuillez remplir le nom et la description.', 'error');
-          return;
-        }
-
-        if (siteDesc.length > 800) {
-          showStatus('⚠️ La description est trop longue. Maximum 800 caractères recommandé.', 'warning');
-          setTimeout(() => showStatus('🚀 Initialisation de la génération...', 'loading'), 2000);
-        } else {
-          showStatus('🚀 Initialisation de la génération...', 'loading');
-        }
-
+        showStatus('🚀 Génération en cours...', 'loading');
         generateBtn.disabled = true;
         streamingIndicator.classList.add('active');
         emptyState.style.display = 'none';
-        rawOutputSection.style.display = 'none';
 
-        const prompt = buildPrompt(siteName, siteDesc, siteType, siteStyle);
+        const prompt = `Génère un site WordPress "${siteName}" (${siteType}, style ${siteStyle}).
+Description: ${siteDesc}
+
+Retourne EXACTEMENT 2 blocs de code :
+1. \`\`\`html\n[Code HTML/CSS/JS complet avec <!DOCTYPE html>]\n\`\`\`
+2. \`\`\`php\n[Code PHP WordPress complet]\n\`\`\``;
 
         try {
           const res = await fetch('/api/generate', {
@@ -241,51 +185,28 @@
             body: JSON.stringify({ prompt, model })
           });
 
-          const contentType = res.headers.get('content-type');
-          if (!res.ok) {
-            const error = await res.json().catch(() => ({ error: 'Erreur inconnue' }));
-            throw new Error(error.error?.message || `Erreur API ${res.status}`);
-          }
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error?.message || `Erreur ${res.status}`);
 
-          let fullContent = '';
-          
-          if (contentType && contentType.includes('text/event-stream')) {
-            // Streaming
-            fullContent = await handleStreaming(res);
-          } else {
-            // Réponse classique
-            const data = await res.json();
-            fullContent = data.choices[0].message.content;
-          }
-
-          currentOutput.raw = fullContent;
-          rawCodeEl.textContent = fullContent;
+          const content = data.choices[0].message.content;
           
           // Extraction robuste
-          const extractionResult = robustExtract(fullContent);
+          const htmlMatch = content.match(/```html\s*([\s\S]*?)```/i);
+          const phpMatch = content.match(/```php\s*([\s\S]*?)```/i);
           
-          if (extractionResult.html || extractionResult.php) {
-            currentOutput.html = extractionResult.html || '<!-- HTML non trouvé -->';
-            currentOutput.php = extractionResult.php || '<?php // PHP non trouvé ?>';
-            currentOutput.css = extractionResult.css || '';
-            
-            htmlCodeEl.textContent = currentOutput.html;
-            phpCodeEl.textContent = currentOutput.php;
-            
-            const blob = new Blob([currentOutput.html], { type: 'text/html' });
-            previewFrame.src = URL.createObjectURL(blob);
-            
-            showStatus('✅ Génération terminée avec succès !', 'success');
-            copyBtn.disabled = false;
-            downloadBtn.disabled = false;
-            downloadZipBtn.disabled = false;
-            tabs[0].click();
-          } else {
-            // Extraction échouée
-            showStatus('⚠️ Génération terminée mais extraction difficile. Voir onglet "Réponse brute"', 'warning');
-            rawOutputSection.style.display = 'block';
-            tabs[3].click(); // Onglet raw
-          }
+          currentOutput.html = htmlMatch ? htmlMatch[1].trim() : '<h1>HTML non trouvé</h1><p>Vérifie l\'onglet PHP ou la réponse brute.</p>';
+          currentOutput.php = phpMatch ? phpMatch[1].trim() : '<?php // PHP non trouvé ?>';
+
+          htmlCodeEl.textContent = currentOutput.html;
+          phpCodeEl.textContent = currentOutput.php;
+          
+          const blob = new Blob([currentOutput.html], { type: 'text/html' });
+          previewFrame.src = URL.createObjectURL(blob);
+
+          showStatus('✅ Génération terminée !', 'success');
+          document.getElementById('copyBtn').disabled = false;
+          document.getElementById('downloadBtn').disabled = false;
+          document.getElementById('downloadZipBtn').disabled = false;
 
         } catch (err) {
           showStatus(`❌ Erreur : ${err.message}`, 'error');
@@ -295,229 +216,35 @@
         }
       });
 
-      // Gestion du streaming
-      async function handleStreaming(response) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let fullContent = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
-
-          for (const line of lines) {
-            if (line.startsWith(' ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') continue;
-              
-              try {
-                const parsed = JSON.parse(data);
-                const content = parsed.choices?.[0]?.delta?.content || '';
-                if (content) {
-                  fullContent += content;
-                }
-              } catch (e) {
-                // Ignore parsing errors
-              }
-            }
-          }
-        }
-
-        return fullContent;
-      }
-
-      // Extraction ROBUSTE du code
-      function robustExtract(content) {
-        let html = null;
-        let php = null;
-        let css = null;
-
-        // Méthode 1 : Chercher les balises markdown explicites
-        const htmlMarkdown = content.match(/```(?:html|HTML)\s*([\s\S]*?)```/i);
-        const phpMarkdown = content.match(/```(?:php|PHP)\s*([\s\S]*?)```/i);
-        const cssMarkdown = content.match(/```(?:css|CSS)\s*([\s\S]*?)```/i);
-
-        if (htmlMarkdown) html = htmlMarkdown[1].trim();
-        if (phpMarkdown) php = phpMarkdown[1].trim();
-        if (cssMarkdown) css = cssMarkdown[1].trim();
-
-        // Méthode 2 : Si pas trouvé, chercher des patterns WordPress
-        if (!php) {
-          const wpPattern = content.match(/<\?php[\s\S]*?\?>/);
-          if (wpPattern) {
-            php = wpPattern[0];
-          }
-        }
-
-        // Méthode 3 : Chercher DOCTYPE ou <html>
-        if (!html) {
-          const htmlPattern = content.match(/(?:<!DOCTYPE html>|<html)[\s\S]*?<\/html>/i);
-          if (htmlPattern) {
-            html = htmlPattern[0];
-          }
-        }
-
-        // Méthode 4 : Si toujours rien, prendre tout ce qui ressemble à du HTML
-        if (!html) {
-          const possibleHtml = content.match(/<[\s\S]*>/);
-          if (possibleHtml && possibleHtml.index < content.length * 0.8) {
-            html = possibleHtml[0];
-          }
-        }
-
-        return { html, php, css };
-      }
-
-      // Construction du prompt optimisé
-      function buildPrompt(siteName, siteDesc, siteType, siteStyle) {
-        return `Génère un site WordPress complet pour "${siteName}".
-
-TYPE: ${siteType}
-STYLE: ${siteStyle}
-DESCRIPTION: ${siteDesc}
-
-INSTRUCTIONS CRITIQUES :
-1. Retourne EXACTEMENT 2 blocs de code markdown dans cet ordre :
-   - Premier bloc : \`\`\`html ... \`\`\` (HTML/CSS/JS complet et autonome)
-   - Deuxième bloc : \`\`\`php ... \`\`\` (Code PHP WordPress complet)
-
-2. Le bloc HTML doit être un fichier .html complet et fonctionnel avec :
-   - <!DOCTYPE html>
-   - <html>, <head>, <body>
-   - CSS intégré dans <style>
-   - JavaScript si nécessaire dans <script>
-   - Design responsive et moderne
-
-3. Le bloc PHP doit être un thème WordPress fonctionnel avec :
-   - En-tête de thème WordPress valide
-   - functions.php avec les hooks nécessaires
-   - index.php avec The Loop
-   - header.php et footer.php
-   - Utilisation de esc_html(), esc_attr() pour la sécurité
-
-Sois précis, professionnel et respecte STRICTEMENT le format demandé.`;
-      }
-
-      // Copier
-      copyBtn.addEventListener('click', () => {
-        const activeTab = document.querySelector('.tab.active').dataset.tab;
-        let text = '';
-        if (activeTab === 'php') text = currentOutput.php;
-        else if (activeTab === 'raw') text = currentOutput.raw;
-        else text = currentOutput.html;
-        
-        navigator.clipboard.writeText(text).then(() => {
-          const original = copyBtn.textContent;
-          copyBtn.textContent = '✅ Copié !';
-          setTimeout(() => copyBtn.textContent = original, 2000);
-        });
+      document.getElementById('copyBtn').addEventListener('click', () => {
+        const text = document.querySelector('.tab.active').dataset.tab === 'php' ? currentOutput.php : currentOutput.html;
+        navigator.clipboard.writeText(text);
       });
 
-      // Télécharger fichier unique
-      downloadBtn.addEventListener('click', () => {
+      document.getElementById('downloadBtn').addEventListener('click', () => {
         const activeTab = document.querySelector('.tab.active').dataset.tab;
-        let content = '';
-        let ext = 'txt';
-        
-        if (activeTab === 'php') {
-          content = currentOutput.php;
-          ext = 'php';
-        } else if (activeTab === 'raw') {
-          content = currentOutput.raw;
-          ext = 'txt';
-        } else {
-          content = currentOutput.html;
-          ext = 'html';
-        }
-        
-        const slug = siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const filename = `wp-${slug}.${ext}`;
-        
+        const content = activeTab === 'php' ? currentOutput.php : currentOutput.html;
+        const ext = activeTab === 'php' ? 'php' : 'html';
         const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
+        a.href = URL.createObjectURL(blob);
+        a.download = `site.${ext}`;
         a.click();
-        URL.revokeObjectURL(url);
       });
 
-      // Télécharger ZIP
-      downloadZipBtn.addEventListener('click', async () => {
-        const siteName = document.getElementById('siteName').value.trim();
-        const slug = siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        
+      document.getElementById('downloadZipBtn').addEventListener('click', async () => {
+        const slug = document.getElementById('siteName').value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const zip = new JSZip();
-        const themeFolder = zip.folder(slug);
+        const folder = zip.folder(slug);
+        folder.file('style.css', '/* Theme generated */');
+        folder.file('index.php', currentOutput.php);
+        folder.file('functions.php', '<?php // Functions ?>');
         
-        themeFolder.file('style.css', `/*
-Theme Name: ${siteName}
-Description: ${document.getElementById('siteDesc').value}
-Version: 1.0.0
-Author: WP Generator
-Text Domain: ${slug}
-*/
-
-:root { --primary: #3b82f6; }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: system-ui, sans-serif; line-height: 1.6; }`);
-        
-        themeFolder.file('index.php', currentOutput.php || `<?php get_header(); ?>
-<main>
-  <?php while (have_posts()) : the_post(); the_content(); endwhile; ?>
-</main>
-<?php get_footer(); ?>`);
-        
-        themeFolder.file('functions.php', `<?php
-function ${slug.replace(/-/g, '_')}_scripts() {
-    wp_enqueue_style('${slug}-style', get_stylesheet_uri());
-}
-add_action('wp_enqueue_scripts', '${slug.replace(/-/g, '_')}_scripts');
-
-function ${slug.replace(/-/g, '_')}_setup() {
-    add_theme_support('title-tag');
-    add_theme_support('post-thumbnails');
-    register_nav_menus(array('primary' => __('Primary Menu', '${slug}')));
-}
-add_action('after_setup_theme', '${slug.replace(/-/g, '_')}_setup');
-?>`);
-        
-        themeFolder.file('header.php', `<!DOCTYPE html>
-<html <?php language_attributes(); ?>>
-<head>
-    <meta charset="<?php bloginfo('charset'); ?>">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <?php wp_head(); ?>
-</head>
-<body <?php body_class(); ?>>
-<header>
-    <h1><a href="<?php echo esc_url(home_url('/')); ?>"><?php bloginfo('name'); ?></a></h1>
-    <nav><?php wp_nav_menu(array('theme_location' => 'primary')); ?></nav>
-</header>
-<main>`);
-        
-        themeFolder.file('footer.php', `</main>
-<footer>
-    <p>&copy; <?php echo date('Y'); ?> <?php bloginfo('name'); ?></p>
-</footer>
-<?php wp_footer(); ?>
-</body>
-</html>`);
-
         const content = await zip.generateAsync({ type: 'blob' });
-        const url = URL.createObjectURL(content);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `${slug}-theme.zip`;
+        a.href = URL.createObjectURL(content);
+        a.download = `${slug}.zip`;
         a.click();
-        URL.revokeObjectURL(url);
-        
-        const original = downloadZipBtn.textContent;
-        downloadZipBtn.textContent = '✅ ZIP téléchargé !';
-        setTimeout(() => downloadZipBtn.textContent = original, 2000);
       });
 
       function showStatus(msg, type) {
