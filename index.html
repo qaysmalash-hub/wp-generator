@@ -3,241 +3,835 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WP Generator — Mistral AI</title>
+  <title>WP Generator v2 — Mistral AI</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
-    :root { --bg: #0b0f19; --card: #151b2b; --text: #e2e8f0; --text-muted: #94a3b8; --primary: #3b82f6; --primary-hover: #2563eb; --border: #2d3748; --success: #10b981; --error: #ef4444; --loading: #1e40af; }
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111;
+      --border: #222;
+      --text: #e0e0e0;
+      --text-muted: #888;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem 1rem; }
-    .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 320px 1fr; gap: 2rem; }
-    @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
-    h1 { text-align: center; margin-bottom: 0.5rem; }
-    .subtitle { text-align: center; color: var(--text-muted); margin-bottom: 2rem; }
-    .card { background: var(--card); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); }
-    label { display: block; margin-bottom: 0.4rem; font-weight: 500; }
-    input, select, textarea { width: 100%; padding: 0.75rem; margin-bottom: 1rem; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: var(--text); }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
-    button { background: var(--primary); color: white; border: none; padding: 0.85rem; border-radius: 8px; cursor: pointer; font-size: 1rem; width: 100%; font-weight: 600; }
-    button:hover:not(:disabled) { background: var(--primary-hover); }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
-    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-    .tab { flex: 1; padding: 0.6rem; background: transparent; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text-muted); }
-    .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: var(--bg); 
+      color: var(--text); 
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    
+    /* Header */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header h1 { font-size: 1.25rem; font-weight: 600; }
+    .version-badge {
+      background: var(--primary);
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    
+    /* Main Layout */
+    .container {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 73px);
+    }
+    @media (max-width: 1024px) {
+      .container { grid-template-columns: 1fr; }
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem;
+      overflow-y: auto;
+      max-height: calc(100vh - 73px);
+    }
+    .section { margin-bottom: 2rem; }
+    .section-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+    
+    /* Form Elements */
+    .form-group { margin-bottom: 1rem; }
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--surface);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .btn-group .btn { flex: 1; }
+    
+    /* Main Content */
+    .main {
+      padding: 2rem;
+      overflow-y: auto;
+      max-height: calc(100vh - 73px);
+    }
+    
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+    .tab {
+      padding: 0.5rem 1rem;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .tab:hover {
+      background: var(--surface);
+      color: var(--text);
+    }
+    .tab.active {
+      background: var(--primary);
+      color: white;
+    }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
-    pre { background: #0d1117; padding: 1rem; border-radius: 8px; overflow-x: auto; max-height: 450px; font-size: 0.85rem; white-space: pre-wrap; }
-    iframe { width: 100%; height: 450px; border: 1px solid var(--border); border-radius: 8px; background: white; }
-    .status { margin-top: 1rem; padding: 0.8rem; border-radius: 8px; text-align: center; display: none; }
-    .status.loading { display: block; background: var(--loading); color: #bfdbfe; }
-    .status.success { display: block; background: #064e3b; color: #6ee7b7; }
-    .status.error { display: block; background: #450a0a; color: #fca5a5; }
-    .actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
-    .actions button { flex: 1; background: var(--card); border: 1px solid var(--border); }
-    .actions button:hover:not(:disabled) { background: var(--border); }
-    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); border: 2px dashed var(--border); border-radius: 10px; margin-top: 1rem; }
-    .badge { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem; margin-left: 0.5rem; }
-    .note { font-size: 0.8rem; color: var(--text-muted); margin-top: -0.5rem; margin-bottom: 1rem; }
+    
+    /* Preview */
+    .preview-container {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .preview-header {
+      background: var(--surface);
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .preview-frame {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    
+    /* Code */
+    .code-block {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.8125rem;
+      line-height: 1.7;
+      color: #c9d1d9;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    
+    /* Version History */
+    .version-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .version-item {
+      padding: 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .version-item:hover {
+      border-color: var(--primary);
+      background: var(--surface);
+    }
+    .version-item.active {
+      border-color: var(--primary);
+      background: rgba(37, 99, 235, 0.1);
+    }
+    .version-number {
+      font-weight: 600;
+      color: var(--primary);
+    }
+    .version-date {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+    
+    /* Status */
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      display: none;
+    }
+    .status.show { display: block; }
+    .status.loading { background: rgba(37, 99, 235, 0.1); color: #60a5fa; }
+    .status.success { background: rgba(16, 185, 129, 0.1); color: #34d399; }
+    .status.error { background: rgba(239, 68, 68, 0.1); color: #f87171; }
+    
+    /* Import Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.show { display: flex; }
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .modal-header h2 { font-size: 1.25rem; }
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+    }
+    .close-btn:hover { color: var(--text); }
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--primary);
+      background: rgba(37, 99, 235, 0.05);
+    }
+    .drop-zone-text {
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+    }
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+    
+    /* Utilities */
+    .hidden { display: none !important; }
+    .text-muted { color: var(--text-muted); }
+    .mt-2 { margin-top: 0.5rem; }
+    .mt-4 { margin-top: 1rem; }
   </style>
 </head>
 <body>
-  <h1>WP Generator <span class="badge">Mistral AI</span></h1>
-  <p class="subtitle">Génère des sites WordPress complets (HTML + PHP) en quelques secondes</p>
+  <!-- Header -->
+  <header class="header">
+    <h1>WP Generator</h1>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <span class="version-badge" id="currentVersionBadge">v1.0</span>
+      <button class="btn btn-secondary" onclick="openImportModal()" style="width: auto;">
+        📥 Importer
+      </button>
+    </div>
+  </header>
 
   <div class="container">
-    <div class="card">
-      <h3>⚙️ Configuration</h3>
-      <form id="generatorForm">
-        <label for="siteName">Nom du site</label>
-        <input type="text" id="siteName" required placeholder="Ex: Mon Portfolio">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <!-- Configuration -->
+      <div class="section">
+        <div class="section-title">Configuration</div>
+        
+        <div class="form-group">
+          <label for="siteName">Nom du site</label>
+          <input type="text" id="siteName" placeholder="Ex: Mon Portfolio">
+        </div>
 
-        <label for="siteDesc">Description / Objectif</label>
-        <textarea id="siteDesc" rows="3" required placeholder="Ex: Site vitrine pour photographe"></textarea>
+        <div class="form-group">
+          <label for="siteDesc">Description</label>
+          <textarea id="siteDesc" placeholder="Décrivez votre site..."></textarea>
+        </div>
 
-        <label for="siteType">Type de site</label>
-        <select id="siteType">
-          <option value="Portfolio">Portfolio</option>
-          <option value="Blog">Blog</option>
-          <option value="E-commerce">E-commerce</option>
-          <option value="Landing Page">Landing Page</option>
-          <option value="Restaurant">Restaurant</option>
-          <option value="SaaS">SaaS</option>
-          <option value="Agence">Agence</option>
-        </select>
+        <div class="form-group">
+          <label for="siteType">Type de site</label>
+          <select id="siteType">
+            <option value="Portfolio">Portfolio</option>
+            <option value="Blog">Blog</option>
+            <option value="E-commerce">E-commerce</option>
+            <option value="Landing Page">Landing Page</option>
+            <option value="Restaurant">Restaurant</option>
+            <option value="SaaS">SaaS</option>
+            <option value="Agence">Agence</option>
+            <option value="Association">Association</option>
+          </select>
+        </div>
 
-        <label for="siteStyle">Style visuel</label>
-        <select id="siteStyle">
-          <option value="Minimaliste">Minimaliste</option>
-          <option value="Dark premium">Dark premium</option>
-          <option value="Coloré">Coloré</option>
-          <option value="Classique">Classique</option>
-          <option value="Rétro">Rétro</option>
-          <option value="Corporate">Corporate</option>
-        </select>
+        <div class="form-group">
+          <label for="siteStyle">Style visuel</label>
+          <select id="siteStyle">
+            <option value="Minimaliste">Minimaliste</option>
+            <option value="Dark premium">Dark premium</option>
+            <option value="Coloré">Coloré</option>
+            <option value="Classique">Classique</option>
+            <option value="Rétro">Rétro</option>
+            <option value="Corporate">Corporate</option>
+          </select>
+        </div>
 
-        <label for="model">Modèle Mistral</label>
-        <select id="model">
-          <option value="mistral-large-latest">Mistral Large (recommandé)</option>
-          <option value="mistral-medium-latest">Mistral Medium</option>
-          <option value="mistral-small-latest">Mistral Small</option>
-        </select>
+        <div class="form-group">
+          <label for="model">Modèle Mistral</label>
+          <select id="model">
+            <option value="mistral-large-latest">Mistral Large</option>
+            <option value="mistral-medium-latest">Mistral Medium</option>
+            <option value="mistral-small-latest">Mistral Small</option>
+          </select>
+        </div>
 
-        <p class="note">🔒 Clé API gérée côté serveur (Vercel)</p>
-        <button type="submit" id="generateBtn">✨ Générer le site WordPress</button>
-      </form>
-    </div>
-
-    <div class="card">
-      <div class="tabs">
-        <button class="tab active" data-tab="preview">Aperçu</button>
-        <button class="tab" data-tab="html">Code HTML</button>
-        <button class="tab" data-tab="php">PHP / WordPress</button>
+        <button class="btn btn-primary" id="generateBtn" onclick="generateSite()">
+          ✨ Générer
+        </button>
+        <button class="btn btn-secondary mt-2" onclick="improveSite()" id="improveBtn" disabled>
+          🔧 Améliorer cette version
+        </button>
       </div>
 
-      <div id="previewTab" class="tab-content active">
-        <iframe id="previewFrame" sandbox="allow-same-origin allow-scripts"></iframe>
+      <!-- Version History -->
+      <div class="section">
+        <div class="section-title">Historique des versions</div>
+        <div class="version-list" id="versionList">
+          <div class="text-muted" style="font-size: 0.875rem;">Aucune version</div>
+        </div>
       </div>
-      <div id="htmlTab" class="tab-content">
-        <pre id="htmlCode">Le code HTML apparaîtra ici...</pre>
-      </div>
-      <div id="phpTab" class="tab-content">
-        <pre id="phpCode">Le code PHP apparaîtra ici...</pre>
+
+      <!-- Actions -->
+      <div class="section">
+        <div class="section-title">Actions</div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="exportProject()">
+            💾 Exporter
+          </button>
+          <button class="btn btn-secondary" onclick="openPreviewWindow()" id="previewWindowBtn" disabled>
+            🔗 Nouvelle fenêtre
+          </button>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="downloadZip()" id="downloadZipBtn" disabled>
+            📦 Télécharger ZIP
+          </button>
+        </div>
       </div>
 
       <div id="status" class="status"></div>
+    </aside>
 
-      <div class="actions">
-        <button id="copyBtn" disabled> Copier</button>
-        <button id="downloadBtn" disabled>⬇️ Télécharger</button>
-        <button id="downloadZipBtn" disabled>📦 Télécharger ZIP</button>
+    <!-- Main Content -->
+    <main class="main">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('preview')">Aperçu</button>
+        <button class="tab" onclick="switchTab('html')">Code HTML</button>
+        <button class="tab" onclick="switchTab('php')">PHP / WordPress</button>
+      </div>
+
+      <div id="previewTab" class="tab-content active">
+        <div class="preview-container">
+          <div class="preview-header">
+            <span class="text-muted">Aperçu en direct</span>
+            <button class="btn btn-secondary" onclick="openPreviewWindow()" style="width: auto; padding: 0.375rem 0.75rem;">
+              Ouvrir ↗
+            </button>
+          </div>
+          <iframe id="previewFrame" class="preview-frame" sandbox="allow-same-origin allow-scripts"></iframe>
+        </div>
+      </div>
+
+      <div id="htmlTab" class="tab-content">
+        <div class="code-block" id="htmlCode">Aucun code généré</div>
+      </div>
+
+      <div id="phpTab" class="tab-content">
+        <div class="code-block" id="phpCode">Aucun code généré</div>
       </div>
 
       <div id="emptyState" class="empty-state">
-        <p>🔍 Aucun site généré</p>
+        <div class="empty-state-icon">🚀</div>
+        <h3>Commencez à générer votre site</h3>
+        <p>Remplissez le formulaire à gauche et cliquez sur "Générer"</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Import Modal -->
+  <div id="importModal" class="modal" onclick="closeImportModalOnBackground(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Importer un projet</h2>
+        <button class="close-btn" onclick="closeImportModal()">&times;</button>
+      </div>
+      
+      <div class="drop-zone" onclick="document.getElementById('fileInput').click()" 
+           ondrop="handleDrop(event)" 
+           ondragover="handleDragOver(event)"
+           ondragleave="handleDragLeave(event)">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📁</div>
+        <div style="font-weight: 600;">Glissez-déposez un fichier ZIP ou JSON</div>
+        <div class="drop-zone-text">ou cliquez pour parcourir</div>
+        <input type="file" id="fileInput" accept=".zip,.json" style="display: none;" onchange="handleFileSelect(event)">
+      </div>
+
+      <div class="mt-4">
+        <label>Ou collez le code JSON :</label>
+        <textarea id="jsonInput" placeholder='{"version": 1, "siteName": "..."}' style="min-height: 150px; font-family: monospace; font-size: 0.8125rem;"></textarea>
+        <button class="btn btn-primary mt-2" onclick="importFromJson()">Importer depuis JSON</button>
       </div>
     </div>
   </div>
 
   <script>
+    // State Management
+    let currentVersion = 0;
+    let versions = [];
+    let currentOutput = { html: '', php: '' };
+    let previewWindow = null;
+
+    // Initialize
     document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('generatorForm');
-      const generateBtn = document.getElementById('generateBtn');
-      const statusEl = document.getElementById('status');
-      const emptyState = document.getElementById('emptyState');
-      const tabs = document.querySelectorAll('.tab');
-      const previewFrame = document.getElementById('previewFrame');
-      const htmlCodeEl = document.getElementById('htmlCode');
-      const phpCodeEl = document.getElementById('phpCode');
-      let currentOutput = { html: '', php: '' };
+      loadVersions();
+      updateVersionUI();
+    });
 
-      tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-          tabs.forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
-          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-          document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
+    // Generation
+    async function generateSite(isImprovement = false) {
+      const siteName = document.getElementById('siteName').value.trim();
+      const siteDesc = document.getElementById('siteDesc').value.trim();
+      const siteType = document.getElementById('siteType').value;
+      const siteStyle = document.getElementById('siteStyle').value;
+      const model = document.getElementById('model').value;
+
+      if (!siteName || !siteDesc) {
+        showStatus('Veuillez remplir le nom et la description', 'error');
+        return;
+      }
+
+      showStatus('Génération en cours...', 'loading');
+      document.getElementById('generateBtn').disabled = true;
+
+      const prompt = isImprovement 
+        ? `Améliore ce site WordPress existant:\n\n${buildPrompt(siteName, siteDesc, siteType, siteStyle)}\n\nCode actuel:\nHTML: ${currentOutput.html.substring(0, 500)}...\nPHP: ${currentOutput.php.substring(0, 500)}...`
+        : buildPrompt(siteName, siteDesc, siteType, siteStyle);
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, model })
         });
-      });
 
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const siteName = document.getElementById('siteName').value.trim();
-        const siteDesc = document.getElementById('siteDesc').value.trim();
-        const siteType = document.getElementById('siteType').value;
-        const siteStyle = document.getElementById('siteStyle').value;
-        const model = document.getElementById('model').value;
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Réponse invalide du serveur');
+        }
 
-        showStatus('🚀 Génération en cours...', 'loading');
-        generateBtn.disabled = true;
-        emptyState.style.display = 'none';
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || `Erreur ${res.status}`);
 
-        const prompt = `Génère un site WordPress "${siteName}" (${siteType}, style ${siteStyle}).
+        const content = data.choices[0].message.content;
+        extractCode(content);
+        
+        // Save version
+        currentVersion++;
+        const version = {
+          number: currentVersion,
+          timestamp: new Date().toISOString(),
+          html: currentOutput.html,
+          php: currentOutput.php,
+          config: {
+            siteName,
+            siteDesc,
+            siteType,
+            siteStyle,
+            model
+          }
+        };
+        versions.push(version);
+        saveVersions();
+        updateVersionUI();
+        
+        showStatus(`Version ${currentVersion} générée avec succès`, 'success');
+        document.getElementById('improveBtn').disabled = false;
+        document.getElementById('previewWindowBtn').disabled = false;
+        document.getElementById('downloadZipBtn').disabled = false;
+        document.getElementById('emptyState').style.display = 'none';
+        
+        updatePreview();
+
+      } catch (err) {
+        showStatus(`Erreur: ${err.message}`, 'error');
+      } finally {
+        document.getElementById('generateBtn').disabled = false;
+      }
+    }
+
+    async function improveSite() {
+      await generateSite(true);
+    }
+
+    function buildPrompt(siteName, siteDesc, siteType, siteStyle) {
+      return `Génère un site WordPress "${siteName}" (${siteType}, style ${siteStyle}).
 Description: ${siteDesc}
 
-Retourne EXACTEMENT 2 blocs de code :
-1. \`\`\`html\n[Code HTML/CSS/JS complet avec <!DOCTYPE html>]\n\`\`\`
+Retourne EXACTEMENT 2 blocs de code:
+1. \`\`\`html\n[Code HTML/CSS/JS complet]\n\`\`\`
 2. \`\`\`php\n[Code PHP WordPress complet]\n\`\`\``;
+    }
 
-        try {
-          const res = await fetch('/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, model })
-          });
+    function extractCode(content) {
+      const htmlMatch = content.match(/```html\s*([\s\S]*?)```/i);
+      const phpMatch = content.match(/```php\s*([\s\S]*?)```/i);
+      
+      currentOutput.html = htmlMatch ? htmlMatch[1].trim() : '<h1>HTML non trouvé</h1>';
+      currentOutput.php = phpMatch ? phpMatch[1].trim() : '<?php // PHP non trouvé ?>';
+      
+      document.getElementById('htmlCode').textContent = currentOutput.html;
+      document.getElementById('phpCode').textContent = currentOutput.php;
+    }
 
-          // ✅ SÉCURITÉ : Vérifie que la réponse est bien du JSON avant de parser
-          const contentType = res.headers.get('content-type');
-          if (!contentType || !contentType.includes('application/json')) {
-            const text = await res.text();
-            throw new Error(`Le serveur a renvoyé du HTML/vidé. Vérifie vercel.json et api/generate.js. Réponse: ${text.substring(0, 80)}...`);
-          }
-
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error?.message || `Erreur API ${res.status}`);
-
-          const content = data.choices[0].message.content;
-          
-          const htmlMatch = content.match(/```html\s*([\s\S]*?)```/i);
-          const phpMatch = content.match(/```php\s*([\s\S]*?)```/i);
-          
-          currentOutput.html = htmlMatch ? htmlMatch[1].trim() : '<h1>HTML non trouvé</h1><p>Vérifie l\'onglet PHP ou le prompt.</p>';
-          currentOutput.php = phpMatch ? phpMatch[1].trim() : '<?php // PHP non trouvé ?>';
-
-          htmlCodeEl.textContent = currentOutput.html;
-          phpCodeEl.textContent = currentOutput.php;
-          
-          const blob = new Blob([currentOutput.html], { type: 'text/html' });
-          previewFrame.src = URL.createObjectURL(blob);
-
-          showStatus('✅ Génération terminée !', 'success');
-          document.getElementById('copyBtn').disabled = false;
-          document.getElementById('downloadBtn').disabled = false;
-          document.getElementById('downloadZipBtn').disabled = false;
-
-        } catch (err) {
-          showStatus(`❌ ${err.message}`, 'error');
-        } finally {
-          generateBtn.disabled = false;
-        }
-      });
-
-      document.getElementById('copyBtn').addEventListener('click', () => {
-        const text = document.querySelector('.tab.active').dataset.tab === 'php' ? currentOutput.php : currentOutput.html;
-        navigator.clipboard.writeText(text);
-      });
-
-      document.getElementById('downloadBtn').addEventListener('click', () => {
-        const activeTab = document.querySelector('.tab.active').dataset.tab;
-        const content = activeTab === 'php' ? currentOutput.php : currentOutput.html;
-        const ext = activeTab === 'php' ? 'php' : 'html';
-        const blob = new Blob([content], { type: 'text/plain' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `site.${ext}`;
-        a.click();
-      });
-
-      document.getElementById('downloadZipBtn').addEventListener('click', async () => {
-        const slug = document.getElementById('siteName').value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const zip = new JSZip();
-        const folder = zip.folder(slug);
-        folder.file('style.css', '/* Theme generated */');
-        folder.file('index.php', currentOutput.php);
-        folder.file('functions.php', '<?php // Functions ?>');
-        
-        const content = await zip.generateAsync({ type: 'blob' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(content);
-        a.download = `${slug}.zip`;
-        a.click();
-      });
-
-      function showStatus(msg, type) {
-        statusEl.className = `status ${type}`;
-        statusEl.textContent = msg;
-        statusEl.style.display = 'block';
-        if (type !== 'loading') setTimeout(() => statusEl.style.display = 'none', 5000);
+    function updatePreview() {
+      const blob = new Blob([currentOutput.html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      document.getElementById('previewFrame').src = url;
+      
+      if (previewWindow && !previewWindow.closed) {
+        previewWindow.location.href = url;
       }
-    });
+    }
+
+    function openPreviewWindow() {
+      if (!previewWindow || previewWindow.closed) {
+        previewWindow = window.open('', '_blank');
+      }
+      const blob = new Blob([currentOutput.html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      previewWindow.location.href = url;
+      previewWindow.focus();
+    }
+
+    // Version Management
+    function saveVersions() {
+      localStorage.setItem('wp_generator_versions', JSON.stringify(versions));
+    }
+
+    function loadVersions() {
+      const saved = localStorage.getItem('wp_generator_versions');
+      if (saved) {
+        versions = JSON.parse(saved);
+        currentVersion = versions.length;
+      }
+    }
+
+    function loadVersion(index) {
+      if (index < 0 || index >= versions.length) return;
+      
+      const version = versions[index];
+      currentOutput.html = version.html;
+      currentOutput.php = version.php;
+      
+      document.getElementById('siteName').value = version.config?.siteName || '';
+      document.getElementById('siteDesc').value = version.config?.siteDesc || '';
+      document.getElementById('siteType').value = version.config?.siteType || 'Portfolio';
+      document.getElementById('siteStyle').value = version.config?.siteStyle || 'Minimaliste';
+      
+      document.getElementById('htmlCode').textContent = currentOutput.html;
+      document.getElementById('phpCode').textContent = currentOutput.php;
+      
+      updatePreview();
+      updateVersionUI();
+      showStatus(`Version ${version.number} chargée`, 'success');
+    }
+
+    function updateVersionUI() {
+      const list = document.getElementById('versionList');
+      const badge = document.getElementById('currentVersionBadge');
+      
+      badge.textContent = `v${currentVersion}.0`;
+      
+      if (versions.length === 0) {
+        list.innerHTML = '<div class="text-muted" style="font-size: 0.875rem;">Aucune version</div>';
+        return;
+      }
+
+      list.innerHTML = versions.map((v, i) => `
+        <div class="version-item ${i === versions.length - 1 ? 'active' : ''}" onclick="loadVersion(${i})">
+          <div class="version-number">Version ${v.number}</div>
+          <div class="version-date">${new Date(v.timestamp).toLocaleString('fr-FR')}</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+            ${v.config?.siteName || 'Site'} - ${v.config?.siteType || 'N/A'}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Import/Export
+    function exportProject() {
+      if (versions.length === 0) {
+        showStatus('Aucune version à exporter', 'error');
+        return;
+      }
+
+      const data = {
+        exportedAt: new Date().toISOString(),
+        versions: versions
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `wp-generator-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      
+      showStatus('Projet exporté avec succès', 'success');
+    }
+
+    function openImportModal() {
+      document.getElementById('importModal').classList.add('show');
+      document.getElementById('jsonInput').value = '';
+    }
+
+    function closeImportModal() {
+      document.getElementById('importModal').classList.remove('show');
+    }
+
+    function closeImportModalOnBackground(event) {
+      if (event.target === event.currentTarget) {
+        closeImportModal();
+      }
+    }
+
+    function handleDragOver(event) {
+      event.preventDefault();
+      event.currentTarget.classList.add('dragover');
+    }
+
+    function handleDragLeave(event) {
+      event.currentTarget.classList.remove('dragover');
+    }
+
+    function handleDrop(event) {
+      event.preventDefault();
+      event.currentTarget.classList.remove('dragover');
+      const files = event.dataTransfer.files;
+      if (files.length > 0) {
+        processImportFile(files[0]);
+      }
+    }
+
+    function handleFileSelect(event) {
+      const files = event.target.files;
+      if (files.length > 0) {
+        processImportFile(files[0]);
+      }
+    }
+
+    async function processImportFile(file) {
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        
+        if (data.versions && Array.isArray(data.versions)) {
+          versions = data.versions;
+          currentVersion = versions.length;
+          saveVersions();
+          updateVersionUI();
+          loadVersion(versions.length - 1);
+          closeImportModal();
+          showStatus(`Projet importé avec succès (${versions.length} versions)`, 'success');
+        } else {
+          throw new Error('Format de fichier invalide');
+        }
+      } catch (err) {
+        showStatus(`Erreur d'import: ${err.message}`, 'error');
+      }
+    }
+
+    function importFromJson() {
+      try {
+        const text = document.getElementById('jsonInput').value;
+        const data = JSON.parse(text);
+        
+        if (data.versions && Array.isArray(data.versions)) {
+          versions = data.versions;
+          currentVersion = versions.length;
+          saveVersions();
+          updateVersionUI();
+          loadVersion(versions.length - 1);
+          closeImportModal();
+          showStatus(`Projet importé avec succès (${versions.length} versions)`, 'success');
+        } else {
+          throw new Error('Format JSON invalide');
+        }
+      } catch (err) {
+        showStatus(`Erreur d'import: ${err.message}`, 'error');
+      }
+    }
+
+    // Download ZIP
+    async function downloadZip() {
+      if (!currentOutput.html && !currentOutput.php) {
+        showStatus('Aucun code à télécharger', 'error');
+        return;
+      }
+
+      const slug = document.getElementById('siteName').value.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'wp-site';
+      const zip = new JSZip();
+      const folder = zip.folder(slug);
+
+      folder.file('style.css', `/*\nTheme Name: ${document.getElementById('siteName').value}\nVersion: ${currentVersion}.0\n*/\n`);
+      folder.file('index.php', currentOutput.php);
+      folder.file('functions.php', '<?php\n// Functions\n?>');
+      folder.file('header.php', '<!DOCTYPE html><html><head><?php wp_head(); ?></head><body>');
+      folder.file('footer.php', '<?php wp_footer(); ?></body></html>');
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(content);
+      a.download = `${slug}-v${currentVersion}.zip`;
+      a.click();
+      
+      showStatus('ZIP téléchargé', 'success');
+    }
+
+    // UI Helpers
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(tab + 'Tab').classList.add('active');
+    }
+
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status show ${type}`;
+      setTimeout(() => status.classList.remove('show'), 5000);
+    }
   </script>
 </body>
 </html>
