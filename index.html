@@ -106,7 +106,7 @@
       <div id="status" class="status"></div>
 
       <div class="actions">
-        <button id="copyBtn" disabled>📋 Copier</button>
+        <button id="copyBtn" disabled> Copier</button>
         <button id="downloadBtn" disabled>⬇️ Télécharger</button>
         <button id="downloadZipBtn" disabled>📦 Télécharger ZIP</button>
       </div>
@@ -164,15 +164,22 @@ Retourne EXACTEMENT 2 blocs de code :
             body: JSON.stringify({ prompt, model })
           });
 
+          // ✅ SÉCURITÉ : Vérifie que la réponse est bien du JSON avant de parser
+          const contentType = res.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            const text = await res.text();
+            throw new Error(`Le serveur a renvoyé du HTML/vidé. Vérifie vercel.json et api/generate.js. Réponse: ${text.substring(0, 80)}...`);
+          }
+
           const data = await res.json();
-          if (!res.ok) throw new Error(data.error?.message || `Erreur ${res.status}`);
+          if (!res.ok) throw new Error(data.error?.message || `Erreur API ${res.status}`);
 
           const content = data.choices[0].message.content;
           
           const htmlMatch = content.match(/```html\s*([\s\S]*?)```/i);
           const phpMatch = content.match(/```php\s*([\s\S]*?)```/i);
           
-          currentOutput.html = htmlMatch ? htmlMatch[1].trim() : '<h1>HTML non trouvé</h1><p>Vérifie l\'onglet PHP.</p>';
+          currentOutput.html = htmlMatch ? htmlMatch[1].trim() : '<h1>HTML non trouvé</h1><p>Vérifie l\'onglet PHP ou le prompt.</p>';
           currentOutput.php = phpMatch ? phpMatch[1].trim() : '<?php // PHP non trouvé ?>';
 
           htmlCodeEl.textContent = currentOutput.html;
@@ -187,7 +194,7 @@ Retourne EXACTEMENT 2 blocs de code :
           document.getElementById('downloadZipBtn').disabled = false;
 
         } catch (err) {
-          showStatus(`❌ Erreur : ${err.message}`, 'error');
+          showStatus(`❌ ${err.message}`, 'error');
         } finally {
           generateBtn.disabled = false;
         }
