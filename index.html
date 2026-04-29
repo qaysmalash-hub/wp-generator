@@ -16,11 +16,12 @@
       --border: #2d3748;
       --success: #10b981;
       --error: #ef4444;
+      --warning: #f59e0b;
       --loading: #1e40af;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem 1rem; }
-    .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 320px 1fr; gap: 2rem; align-items: start; }
+    .container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 350px 1fr; gap: 2rem; align-items: start; }
     @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
     h1 { text-align: center; margin-bottom: 0.5rem; font-weight: 700; }
     .subtitle { text-align: center; color: var(--text-muted); margin-bottom: 2rem; }
@@ -37,13 +38,14 @@
     .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
-    pre { background: #0d1117; padding: 1rem; border-radius: 8px; overflow-x: auto; max-height: 450px; font-size: 0.85rem; color: #c9d1d9; white-space: pre-wrap; }
-    iframe { width: 100%; height: 450px; border: 1px solid var(--border); border-radius: 8px; background: white; }
+    pre { background: #0d1117; padding: 1rem; border-radius: 8px; overflow-x: auto; max-height: 500px; font-size: 0.85rem; color: #c9d1d9; white-space: pre-wrap; word-break: break-word; }
+    iframe { width: 100%; height: 500px; border: 1px solid var(--border); border-radius: 8px; background: white; }
     .status { margin-top: 1rem; padding: 0.8rem; border-radius: 8px; text-align: center; font-weight: 500; display: none; animation: fadeIn 0.3s; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     .status.loading { display: block; background: var(--loading); color: #bfdbfe; }
     .status.success { display: block; background: #064e3b; color: #6ee7b7; }
     .status.error { display: block; background: #450a0a; color: #fca5a5; }
+    .status.warning { display: block; background: #451a03; color: #fcd34d; }
     .actions { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
     .actions button { flex: 1; min-width: 120px; background: var(--card); border: 1px solid var(--border); color: var(--text); font-weight: 500; }
     .actions button:hover:not(:disabled) { background: var(--border); }
@@ -54,6 +56,9 @@
     .streaming-indicator.active { display: flex; }
     .dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 1.5s infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .raw-output { background: #1a1f2e; padding: 1rem; border-radius: 8px; margin-top: 1rem; border-left: 4px solid var(--warning); }
+    .raw-output h4 { color: var(--warning); margin-bottom: 0.5rem; }
+    .char-count { font-size: 0.75rem; color: var(--text-muted); text-align: right; margin-top: -0.5rem; margin-bottom: 0.5rem; }
   </style>
 </head>
 <body>
@@ -66,10 +71,12 @@
       <h3>⚙️ Configuration</h3>
       <form id="generatorForm">
         <label for="siteName">Nom du site</label>
-        <input type="text" id="siteName" required placeholder="Ex: Mon Portfolio Créatif">
+        <input type="text" id="siteName" required placeholder="Ex: Mon Portfolio Créatif" maxlength="100">
+        <div class="char-count" id="nameCount">0/100</div>
 
         <label for="siteDesc">Description / Objectif</label>
-        <textarea id="siteDesc" rows="3" required placeholder="Ex: Site vitrine pour photographe avec galerie et formulaire de contact"></textarea>
+        <textarea id="siteDesc" rows="4" required placeholder="Ex: Site vitrine pour photographe avec galerie et formulaire de contact" maxlength="1000"></textarea>
+        <div class="char-count" id="descCount">0/1000</div>
 
         <label for="siteType">Type de site</label>
         <select id="siteType">
@@ -97,7 +104,7 @@
         <select id="model">
           <option value="mistral-large-latest">Mistral Large (recommandé)</option>
           <option value="mistral-medium-latest">Mistral Medium</option>
-          <option value="mistral-small-latest">Mistral Small</option>
+          <option value="mistral-small-latest">Mistral Small (rapide)</option>
           <option value="open-mistral-7b">Mistral 7B (open)</option>
         </select>
 
@@ -116,6 +123,7 @@
         <button class="tab active" data-tab="preview">Aperçu</button>
         <button class="tab" data-tab="html">Code HTML</button>
         <button class="tab" data-tab="php">PHP / WordPress</button>
+        <button class="tab" data-tab="raw">Réponse brute</button>
       </div>
 
       <div id="previewTab" class="tab-content active">
@@ -127,8 +135,16 @@
       <div id="phpTab" class="tab-content">
         <pre id="phpCode">Le code PHP apparaîtra ici après génération...</pre>
       </div>
+      <div id="rawTab" class="tab-content">
+        <pre id="rawCode">La réponse complète de l'IA apparaîtra ici...</pre>
+      </div>
 
       <div id="status" class="status"></div>
+
+      <div id="rawOutputSection" class="raw-output" style="display: none;">
+        <h4>⚠️ Extraction difficile</h4>
+        <p>L'IA n'a pas formaté sa réponse comme attendu. Voici le contenu brut détecté :</p>
+      </div>
 
       <div class="actions">
         <button id="copyBtn" disabled>📋 Copier</button>
@@ -150,20 +166,35 @@
       const statusEl = document.getElementById('status');
       const emptyState = document.getElementById('emptyState');
       const streamingIndicator = document.getElementById('streamingIndicator');
+      const rawOutputSection = document.getElementById('rawOutputSection');
       const tabs = document.querySelectorAll('.tab');
       const tabContents = {
         preview: document.getElementById('previewTab'),
         html: document.getElementById('htmlTab'),
-        php: document.getElementById('phpTab')
+        php: document.getElementById('phpTab'),
+        raw: document.getElementById('rawTab')
       };
       const previewFrame = document.getElementById('previewFrame');
       const htmlCodeEl = document.getElementById('htmlCode');
       const phpCodeEl = document.getElementById('phpCode');
+      const rawCodeEl = document.getElementById('rawCode');
       const copyBtn = document.getElementById('copyBtn');
       const downloadBtn = document.getElementById('downloadBtn');
       const downloadZipBtn = document.getElementById('downloadZipBtn');
+      const nameInput = document.getElementById('siteName');
+      const descInput = document.getElementById('siteDesc');
+      const nameCount = document.getElementById('nameCount');
+      const descCount = document.getElementById('descCount');
 
-      let currentOutput = { html: '', php: '', css: '' };
+      let currentOutput = { html: '', php: '', css: '', raw: '' };
+
+      // Compteur de caractères
+      nameInput.addEventListener('input', () => {
+        nameCount.textContent = `${nameInput.value.length}/100`;
+      });
+      descInput.addEventListener('input', () => {
+        descCount.textContent = `${descInput.value.length}/1000`;
+      });
 
       // Gestion des onglets
       tabs.forEach(tab => {
@@ -178,8 +209,8 @@
       // Soumission du formulaire
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const siteName = document.getElementById('siteName').value.trim();
-        const siteDesc = document.getElementById('siteDesc').value.trim();
+        const siteName = nameInput.value.trim();
+        const siteDesc = descInput.value.trim();
         const siteType = document.getElementById('siteType').value;
         const siteStyle = document.getElementById('siteStyle').value;
         const model = document.getElementById('model').value;
@@ -189,10 +220,17 @@
           return;
         }
 
-        showStatus('🚀 Initialisation de la génération...', 'loading');
+        if (siteDesc.length > 800) {
+          showStatus('⚠️ La description est trop longue. Maximum 800 caractères recommandé.', 'warning');
+          setTimeout(() => showStatus('🚀 Initialisation de la génération...', 'loading'), 2000);
+        } else {
+          showStatus('🚀 Initialisation de la génération...', 'loading');
+        }
+
         generateBtn.disabled = true;
         streamingIndicator.classList.add('active');
         emptyState.style.display = 'none';
+        rawOutputSection.style.display = 'none';
 
         const prompt = buildPrompt(siteName, siteDesc, siteType, siteStyle);
 
@@ -209,21 +247,45 @@
             throw new Error(error.error?.message || `Erreur API ${res.status}`);
           }
 
+          let fullContent = '';
+          
           if (contentType && contentType.includes('text/event-stream')) {
             // Streaming
-            await handleStreaming(res);
+            fullContent = await handleStreaming(res);
           } else {
             // Réponse classique
             const data = await res.json();
-            const content = data.choices[0].message.content;
-            parseAndDisplay(content);
+            fullContent = data.choices[0].message.content;
           }
 
-          showStatus('✅ Génération terminée !', 'success');
-          copyBtn.disabled = false;
-          downloadBtn.disabled = false;
-          downloadZipBtn.disabled = false;
-          tabs[0].click();
+          currentOutput.raw = fullContent;
+          rawCodeEl.textContent = fullContent;
+          
+          // Extraction robuste
+          const extractionResult = robustExtract(fullContent);
+          
+          if (extractionResult.html || extractionResult.php) {
+            currentOutput.html = extractionResult.html || '<!-- HTML non trouvé -->';
+            currentOutput.php = extractionResult.php || '<?php // PHP non trouvé ?>';
+            currentOutput.css = extractionResult.css || '';
+            
+            htmlCodeEl.textContent = currentOutput.html;
+            phpCodeEl.textContent = currentOutput.php;
+            
+            const blob = new Blob([currentOutput.html], { type: 'text/html' });
+            previewFrame.src = URL.createObjectURL(blob);
+            
+            showStatus('✅ Génération terminée avec succès !', 'success');
+            copyBtn.disabled = false;
+            downloadBtn.disabled = false;
+            downloadZipBtn.disabled = false;
+            tabs[0].click();
+          } else {
+            // Extraction échouée
+            showStatus('⚠️ Génération terminée mais extraction difficile. Voir onglet "Réponse brute"', 'warning');
+            rawOutputSection.style.display = 'block';
+            tabs[3].click(); // Onglet raw
+          }
 
         } catch (err) {
           showStatus(`❌ Erreur : ${err.message}`, 'error');
@@ -247,7 +309,7 @@
           const lines = chunk.split('\n');
 
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
+            if (line.startsWith(' ')) {
               const data = line.slice(6);
               if (data === '[DONE]') continue;
               
@@ -256,20 +318,6 @@
                 const content = parsed.choices?.[0]?.delta?.content || '';
                 if (content) {
                   fullContent += content;
-                  // Mise à jour en temps réel
-                  const tempHtml = fullContent.match(/```html\s*([\s\S]*?)```/i);
-                  const tempPhp = fullContent.match(/```php\s*([\s\S]*?)```/i);
-                  
-                  if (tempHtml) {
-                    currentOutput.html = tempHtml[1].trim();
-                    htmlCodeEl.textContent = currentOutput.html;
-                    const blob = new Blob([currentOutput.html], { type: 'text/html' });
-                    previewFrame.src = URL.createObjectURL(blob);
-                  }
-                  if (tempPhp) {
-                    currentOutput.php = tempPhp[1].trim();
-                    phpCodeEl.textContent = currentOutput.php;
-                  }
                 }
               } catch (e) {
                 // Ignore parsing errors
@@ -278,91 +326,89 @@
           }
         }
 
-        parseAndDisplay(fullContent);
+        return fullContent;
+      }
+
+      // Extraction ROBUSTE du code
+      function robustExtract(content) {
+        let html = null;
+        let php = null;
+        let css = null;
+
+        // Méthode 1 : Chercher les balises markdown explicites
+        const htmlMarkdown = content.match(/```(?:html|HTML)\s*([\s\S]*?)```/i);
+        const phpMarkdown = content.match(/```(?:php|PHP)\s*([\s\S]*?)```/i);
+        const cssMarkdown = content.match(/```(?:css|CSS)\s*([\s\S]*?)```/i);
+
+        if (htmlMarkdown) html = htmlMarkdown[1].trim();
+        if (phpMarkdown) php = phpMarkdown[1].trim();
+        if (cssMarkdown) css = cssMarkdown[1].trim();
+
+        // Méthode 2 : Si pas trouvé, chercher des patterns WordPress
+        if (!php) {
+          const wpPattern = content.match(/<\?php[\s\S]*?\?>/);
+          if (wpPattern) {
+            php = wpPattern[0];
+          }
+        }
+
+        // Méthode 3 : Chercher DOCTYPE ou <html>
+        if (!html) {
+          const htmlPattern = content.match(/(?:<!DOCTYPE html>|<html)[\s\S]*?<\/html>/i);
+          if (htmlPattern) {
+            html = htmlPattern[0];
+          }
+        }
+
+        // Méthode 4 : Si toujours rien, prendre tout ce qui ressemble à du HTML
+        if (!html) {
+          const possibleHtml = content.match(/<[\s\S]*>/);
+          if (possibleHtml && possibleHtml.index < content.length * 0.8) {
+            html = possibleHtml[0];
+          }
+        }
+
+        return { html, php, css };
       }
 
       // Construction du prompt optimisé
       function buildPrompt(siteName, siteDesc, siteType, siteStyle) {
-        return `Génère un site WordPress complet et professionnel avec ces spécifications :
+        return `Génère un site WordPress complet pour "${siteName}".
 
-📋 SPÉCIFICATIONS :
-- Nom : ${siteName}
-- Objectif : ${siteDesc}
-- Type : ${siteType}
-- Style visuel : ${siteStyle}
+TYPE: ${siteType}
+STYLE: ${siteStyle}
+DESCRIPTION: ${siteDesc}
 
-📦 LIVRABLES ATTENDUS (dans l'ordre) :
+INSTRUCTIONS CRITIQUES :
+1. Retourne EXACTEMENT 2 blocs de code markdown dans cet ordre :
+   - Premier bloc : \`\`\`html ... \`\`\` (HTML/CSS/JS complet et autonome)
+   - Deuxième bloc : \`\`\`php ... \`\`\` (Code PHP WordPress complet)
 
-1. Bloc HTML/CSS/JS autonome pour prévisualisation :
-\`\`\`html
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${siteName}</title>
-  <style>
-    /* CSS moderne, responsive, style: ${siteStyle} */
-    :root { --primary: #3b82f6; }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, sans-serif; line-height: 1.6; }
-  </style>
-</head>
-<body>
-  <!-- Structure HTML complète pour ${siteType} -->
-  <header><!-- Navigation --></header>
-  <main><!-- Contenu principal --></main>
-  <footer><!-- Footer --></footer>
-</body>
-</html>
-\`\`\`
+2. Le bloc HTML doit être un fichier .html complet et fonctionnel avec :
+   - <!DOCTYPE html>
+   - <html>, <head>, <body>
+   - CSS intégré dans <style>
+   - JavaScript si nécessaire dans <script>
+   - Design responsive et moderne
 
-2. Bloc PHP WordPress (structure thème complet) :
-\`\`\`php
-<?php
-/**
- * Theme Name: ${siteName}
- * Description: ${siteDesc}
- * Version: 1.0.0
- * Author: WP Generator
- * Text Domain: ${siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
- */
+3. Le bloc PHP doit être un thème WordPress fonctionnel avec :
+   - En-tête de thème WordPress valide
+   - functions.php avec les hooks nécessaires
+   - index.php avec The Loop
+   - header.php et footer.php
+   - Utilisation de esc_html(), esc_attr() pour la sécurité
 
-// Code PHP WordPress sécurisé et fonctionnel
-// Avec functions.php, index.php, header.php, footer.php combinés
-// Utilise les best practices WordPress (escaping, sanitization, hooks)
-?>
-\`\`\`
-
-⚠️ RÈGLES DE SÉCURITÉ OBLIGATOIRES :
-- Toujours échapper les outputs : esc_html(), esc_attr(), wp_kses()
-- Toujours sanitiser les inputs : sanitize_text_field(), sanitize_email()
-- Utiliser wp_nonce_field() pour les formulaires
-- Utiliser check_admin_referer() pour vérifier les nonces
-
-🎨 STYLE VISUEL : ${siteStyle}`;
-      }
-
-      // Parse et affiche le contenu
-      function parseAndDisplay(content) {
-        const htmlMatch = content.match(/```html\s*([\s\S]*?)```/i);
-        const phpMatch = content.match(/```php\s*([\s\S]*?)```/i);
-        
-        currentOutput.html = htmlMatch ? htmlMatch[1].trim() : '<h1>HTML non trouvé</h1>';
-        currentOutput.php = phpMatch ? phpMatch[1].trim() : '<?php // PHP non trouvé ?>';
-        currentOutput.css = '';
-
-        htmlCodeEl.textContent = currentOutput.html;
-        phpCodeEl.textContent = currentOutput.php;
-        
-        const blob = new Blob([currentOutput.html], { type: 'text/html' });
-        previewFrame.src = URL.createObjectURL(blob);
+Sois précis, professionnel et respecte STRICTEMENT le format demandé.`;
       }
 
       // Copier
       copyBtn.addEventListener('click', () => {
         const activeTab = document.querySelector('.tab.active').dataset.tab;
-        const text = activeTab === 'php' ? currentOutput.php : currentOutput.html;
+        let text = '';
+        if (activeTab === 'php') text = currentOutput.php;
+        else if (activeTab === 'raw') text = currentOutput.raw;
+        else text = currentOutput.html;
+        
         navigator.clipboard.writeText(text).then(() => {
           const original = copyBtn.textContent;
           copyBtn.textContent = '✅ Copié !';
@@ -373,9 +419,21 @@
       // Télécharger fichier unique
       downloadBtn.addEventListener('click', () => {
         const activeTab = document.querySelector('.tab.active').dataset.tab;
-        const content = activeTab === 'php' ? currentOutput.php : currentOutput.html;
-        const ext = activeTab === 'php' ? 'php' : 'html';
-        const slug = document.getElementById('siteName').value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        let content = '';
+        let ext = 'txt';
+        
+        if (activeTab === 'php') {
+          content = currentOutput.php;
+          ext = 'php';
+        } else if (activeTab === 'raw') {
+          content = currentOutput.raw;
+          ext = 'txt';
+        } else {
+          content = currentOutput.html;
+          ext = 'html';
+        }
+        
+        const slug = siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const filename = `wp-${slug}.${ext}`;
         
         const blob = new Blob([content], { type: 'text/plain' });
@@ -403,18 +461,17 @@ Author: WP Generator
 Text Domain: ${slug}
 */
 
-/* CSS généré */
 :root { --primary: #3b82f6; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: system-ui, sans-serif; line-height: 1.6; }`);
         
-        themeFolder.file('index.php', currentOutput.php || '<?php get_header(); ?>\n<main><?php while (have_posts()) : the_post(); the_content(); endwhile; ?></main>\n<?php get_footer(); ?>');
+        themeFolder.file('index.php', currentOutput.php || `<?php get_header(); ?>
+<main>
+  <?php while (have_posts()) : the_post(); the_content(); endwhile; ?>
+</main>
+<?php get_footer(); ?>`);
         
         themeFolder.file('functions.php', `<?php
-/**
- * Functions for ${siteName}
- */
-
 function ${slug.replace(/-/g, '_')}_scripts() {
     wp_enqueue_style('${slug}-style', get_stylesheet_uri());
 }
