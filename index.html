@@ -6,55 +6,37 @@
   <title>WP Generator — Mistral AI</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
-    :root {
-      --bg: #0b0f19;
-      --card: #151b2b;
-      --text: #e2e8f0;
-      --text-muted: #94a3b8;
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --border: #2d3748;
-      --success: #10b981;
-      --error: #ef4444;
-      --warning: #f59e0b;
-      --loading: #1e40af;
-    }
+    :root { --bg: #0b0f19; --card: #151b2b; --text: #e2e8f0; --text-muted: #94a3b8; --primary: #3b82f6; --primary-hover: #2563eb; --border: #2d3748; --success: #10b981; --error: #ef4444; --loading: #1e40af; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem 1rem; }
-    .container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 350px 1fr; gap: 2rem; align-items: start; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem 1rem; }
+    .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 320px 1fr; gap: 2rem; }
     @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
-    h1 { text-align: center; margin-bottom: 0.5rem; font-weight: 700; }
+    h1 { text-align: center; margin-bottom: 0.5rem; }
     .subtitle { text-align: center; color: var(--text-muted); margin-bottom: 2rem; }
     .card { background: var(--card); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); }
-    label { display: block; margin-bottom: 0.4rem; font-weight: 500; font-size: 0.95rem; }
-    input, select, textarea { width: 100%; padding: 0.75rem; margin-bottom: 1rem; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.95rem; transition: border 0.2s; }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.3); }
-    button { background: var(--primary); color: white; border: none; padding: 0.85rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 1rem; width: 100%; font-weight: 600; transition: all 0.2s; }
-    button:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
+    label { display: block; margin-bottom: 0.4rem; font-weight: 500; }
+    input, select, textarea { width: 100%; padding: 0.75rem; margin-bottom: 1rem; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: var(--text); }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
+    button { background: var(--primary); color: white; border: none; padding: 0.85rem; border-radius: 8px; cursor: pointer; font-size: 1rem; width: 100%; font-weight: 600; }
+    button:hover:not(:disabled) { background: var(--primary-hover); }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
     .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-    .tab { flex: 1; padding: 0.6rem; background: transparent; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text-muted); font-weight: 500; transition: all 0.2s; }
-    .tab:hover { background: var(--border); }
+    .tab { flex: 1; padding: 0.6rem; background: transparent; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text-muted); }
     .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
-    pre { background: #0d1117; padding: 1rem; border-radius: 8px; overflow-x: auto; max-height: 500px; font-size: 0.85rem; color: #c9d1d9; white-space: pre-wrap; word-break: break-word; }
-    iframe { width: 100%; height: 500px; border: 1px solid var(--border); border-radius: 8px; background: white; }
-    .status { margin-top: 1rem; padding: 0.8rem; border-radius: 8px; text-align: center; font-weight: 500; display: none; }
+    pre { background: #0d1117; padding: 1rem; border-radius: 8px; overflow-x: auto; max-height: 450px; font-size: 0.85rem; white-space: pre-wrap; }
+    iframe { width: 100%; height: 450px; border: 1px solid var(--border); border-radius: 8px; background: white; }
+    .status { margin-top: 1rem; padding: 0.8rem; border-radius: 8px; text-align: center; display: none; }
     .status.loading { display: block; background: var(--loading); color: #bfdbfe; }
     .status.success { display: block; background: #064e3b; color: #6ee7b7; }
     .status.error { display: block; background: #450a0a; color: #fca5a5; }
-    .status.warning { display: block; background: #451a03; color: #fcd34d; }
-    .actions { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
-    .actions button { flex: 1; min-width: 120px; background: var(--card); border: 1px solid var(--border); color: var(--text); font-weight: 500; }
+    .actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+    .actions button { flex: 1; background: var(--card); border: 1px solid var(--border); }
     .actions button:hover:not(:disabled) { background: var(--border); }
     .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); border: 2px dashed var(--border); border-radius: 10px; margin-top: 1rem; }
     .badge { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem; margin-left: 0.5rem; }
     .note { font-size: 0.8rem; color: var(--text-muted); margin-top: -0.5rem; margin-bottom: 1rem; }
-    .streaming-indicator { display: none; align-items: center; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); }
-    .streaming-indicator.active { display: flex; }
-    .dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
   </style>
 </head>
 <body>
@@ -66,7 +48,7 @@
       <h3>⚙️ Configuration</h3>
       <form id="generatorForm">
         <label for="siteName">Nom du site</label>
-        <input type="text" id="siteName" required placeholder="Ex: Mon Portfolio Créatif">
+        <input type="text" id="siteName" required placeholder="Ex: Mon Portfolio">
 
         <label for="siteDesc">Description / Objectif</label>
         <textarea id="siteDesc" rows="3" required placeholder="Ex: Site vitrine pour photographe"></textarea>
@@ -79,6 +61,7 @@
           <option value="Landing Page">Landing Page</option>
           <option value="Restaurant">Restaurant</option>
           <option value="SaaS">SaaS</option>
+          <option value="Agence">Agence</option>
         </select>
 
         <label for="siteStyle">Style visuel</label>
@@ -87,21 +70,19 @@
           <option value="Dark premium">Dark premium</option>
           <option value="Coloré">Coloré</option>
           <option value="Classique">Classique</option>
+          <option value="Rétro">Rétro</option>
+          <option value="Corporate">Corporate</option>
         </select>
 
         <label for="model">Modèle Mistral</label>
         <select id="model">
-          <option value="mistral-large-latest">Mistral Large</option>
+          <option value="mistral-large-latest">Mistral Large (recommandé)</option>
           <option value="mistral-medium-latest">Mistral Medium</option>
           <option value="mistral-small-latest">Mistral Small</option>
         </select>
 
         <p class="note">🔒 Clé API gérée côté serveur (Vercel)</p>
-        <button type="submit" id="generateBtn">✨ Générer</button>
-        <div class="streaming-indicator" id="streamingIndicator">
-          <span class="dot"></span>
-          <span>Génération en cours...</span>
-        </div>
+        <button type="submit" id="generateBtn">✨ Générer le site WordPress</button>
       </form>
     </div>
 
@@ -142,7 +123,6 @@
       const generateBtn = document.getElementById('generateBtn');
       const statusEl = document.getElementById('status');
       const emptyState = document.getElementById('emptyState');
-      const streamingIndicator = document.getElementById('streamingIndicator');
       const tabs = document.querySelectorAll('.tab');
       const previewFrame = document.getElementById('previewFrame');
       const htmlCodeEl = document.getElementById('htmlCode');
@@ -168,7 +148,6 @@
 
         showStatus('🚀 Génération en cours...', 'loading');
         generateBtn.disabled = true;
-        streamingIndicator.classList.add('active');
         emptyState.style.display = 'none';
 
         const prompt = `Génère un site WordPress "${siteName}" (${siteType}, style ${siteStyle}).
@@ -190,11 +169,10 @@ Retourne EXACTEMENT 2 blocs de code :
 
           const content = data.choices[0].message.content;
           
-          // Extraction robuste
           const htmlMatch = content.match(/```html\s*([\s\S]*?)```/i);
           const phpMatch = content.match(/```php\s*([\s\S]*?)```/i);
           
-          currentOutput.html = htmlMatch ? htmlMatch[1].trim() : '<h1>HTML non trouvé</h1><p>Vérifie l\'onglet PHP ou la réponse brute.</p>';
+          currentOutput.html = htmlMatch ? htmlMatch[1].trim() : '<h1>HTML non trouvé</h1><p>Vérifie l\'onglet PHP.</p>';
           currentOutput.php = phpMatch ? phpMatch[1].trim() : '<?php // PHP non trouvé ?>';
 
           htmlCodeEl.textContent = currentOutput.html;
@@ -212,7 +190,6 @@ Retourne EXACTEMENT 2 blocs de code :
           showStatus(`❌ Erreur : ${err.message}`, 'error');
         } finally {
           generateBtn.disabled = false;
-          streamingIndicator.classList.remove('active');
         }
       });
 
