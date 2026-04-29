@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WP Generator — Mistral AI</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
     :root {
       --bg: #0b0f19;
@@ -43,12 +44,16 @@
     .status.loading { display: block; background: var(--loading); color: #bfdbfe; }
     .status.success { display: block; background: #064e3b; color: #6ee7b7; }
     .status.error { display: block; background: #450a0a; color: #fca5a5; }
-    .actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
-    .actions button { background: var(--card); border: 1px solid var(--border); color: var(--text); font-weight: 500; }
+    .actions { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+    .actions button { flex: 1; min-width: 120px; background: var(--card); border: 1px solid var(--border); color: var(--text); font-weight: 500; }
     .actions button:hover:not(:disabled) { background: var(--border); }
     .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); border: 2px dashed var(--border); border-radius: 10px; margin-top: 1rem; }
     .badge { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem; margin-left: 0.5rem; vertical-align: middle; }
     .note { font-size: 0.8rem; color: var(--text-muted); margin-top: -0.5rem; margin-bottom: 1rem; }
+    .streaming-indicator { display: none; align-items: center; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); }
+    .streaming-indicator.active { display: flex; }
+    .dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
   </style>
 </head>
 <body>
@@ -98,6 +103,10 @@
 
         <p class="note">🔒 La clé API est gérée automatiquement côté serveur (Vercel). Aucun champ à remplir.</p>
         <button type="submit" id="generateBtn">✨ Générer le site WordPress</button>
+        <div class="streaming-indicator" id="streamingIndicator">
+          <span class="dot"></span>
+          <span>Génération en temps réel...</span>
+        </div>
       </form>
     </div>
 
@@ -124,6 +133,7 @@
       <div class="actions">
         <button id="copyBtn" disabled>📋 Copier</button>
         <button id="downloadBtn" disabled>⬇️ Télécharger</button>
+        <button id="downloadZipBtn" disabled>📦 Télécharger le thème (.zip)</button>
       </div>
 
       <div id="emptyState" class="empty-state">
@@ -139,6 +149,7 @@
       const generateBtn = document.getElementById('generateBtn');
       const statusEl = document.getElementById('status');
       const emptyState = document.getElementById('emptyState');
+      const streamingIndicator = document.getElementById('streamingIndicator');
       const tabs = document.querySelectorAll('.tab');
       const tabContents = {
         preview: document.getElementById('previewTab'),
@@ -150,8 +161,9 @@
       const phpCodeEl = document.getElementById('phpCode');
       const copyBtn = document.getElementById('copyBtn');
       const downloadBtn = document.getElementById('downloadBtn');
+      const downloadZipBtn = document.getElementById('downloadZipBtn');
 
-      let currentOutput = { html: '', php: '' };
+      let currentOutput = { html: '', php: '', css: '' };
 
       // Gestion des onglets
       tabs.forEach(tab => {
@@ -177,19 +189,12 @@
           return;
         }
 
-        showStatus('🚀 Génération en cours avec Mistral AI...', 'loading');
+        showStatus('🚀 Initialisation de la génération...', 'loading');
         generateBtn.disabled = true;
+        streamingIndicator.classList.add('active');
         emptyState.style.display = 'none';
 
-        const prompt = `Génère un site WordPress complet basé sur ces spécifications :
-- Nom : ${siteName}
-- Objectif : ${siteDesc}
-- Type : ${siteType}
-- Style visuel : ${siteStyle}
-
-Retourne EXACTEMENT deux blocs de code markdown, sans aucun texte explicatif autour :
-1. \`\`\`html\n[Code HTML/CSS/JS complet et autonome pour l'aperçu frontend]\n\`\`\`
-2. \`\`\`php\n[Code PHP WordPress complet (structure thème simple, functions.php, style.css header, index.php)]\n\`\`\``;
+        const prompt = buildPrompt(siteName, siteDesc, siteType, siteStyle);
 
         try {
           const res = await fetch('/api/generate', {
@@ -198,39 +203,161 @@ Retourne EXACTEMENT deux blocs de code markdown, sans aucun texte explicatif aut
             body: JSON.stringify({ prompt, model })
           });
 
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error?.message || `Erreur API ${res.status}`);
+          const contentType = res.headers.get('content-type');
+          if (!res.ok) {
+            const error = await res.json().catch(() => ({ error: 'Erreur inconnue' }));
+            throw new Error(error.error?.message || `Erreur API ${res.status}`);
+          }
 
-          const content = data.choices[0].message.content;
-          
-          // Extraction robuste des blocs de code
-          const htmlMatch = content.match(/```html\s*([\s\S]*?)```/i);
-          const phpMatch = content.match(/```php\s*([\s\S]*?)```/i);
-          
-          currentOutput.html = htmlMatch ? htmlMatch[1].trim() : '<h1>HTML non trouvé</h1><p>Vérifie le prompt ou réessaie.</p>';
-          currentOutput.php = phpMatch ? phpMatch[1].trim() : '// PHP non trouvé dans la réponse';
-
-          // Mise à jour UI
-          htmlCodeEl.textContent = currentOutput.html;
-          phpCodeEl.textContent = currentOutput.php;
-          
-          // Prévisualisation sécurisée
-          const blob = new Blob([currentOutput.html], { type: 'text/html' });
-          previewFrame.src = URL.createObjectURL(blob);
+          if (contentType && contentType.includes('text/event-stream')) {
+            // Streaming
+            await handleStreaming(res);
+          } else {
+            // Réponse classique
+            const data = await res.json();
+            const content = data.choices[0].message.content;
+            parseAndDisplay(content);
+          }
 
           showStatus('✅ Génération terminée !', 'success');
           copyBtn.disabled = false;
           downloadBtn.disabled = false;
-          
-          // Activer l'onglet aperçu
+          downloadZipBtn.disabled = false;
           tabs[0].click();
 
         } catch (err) {
           showStatus(`❌ Erreur : ${err.message}`, 'error');
         } finally {
           generateBtn.disabled = false;
+          streamingIndicator.classList.remove('active');
         }
       });
+
+      // Gestion du streaming
+      async function handleStreaming(response) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullContent = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') continue;
+              
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content || '';
+                if (content) {
+                  fullContent += content;
+                  // Mise à jour en temps réel
+                  const tempHtml = fullContent.match(/```html\s*([\s\S]*?)```/i);
+                  const tempPhp = fullContent.match(/```php\s*([\s\S]*?)```/i);
+                  
+                  if (tempHtml) {
+                    currentOutput.html = tempHtml[1].trim();
+                    htmlCodeEl.textContent = currentOutput.html;
+                    const blob = new Blob([currentOutput.html], { type: 'text/html' });
+                    previewFrame.src = URL.createObjectURL(blob);
+                  }
+                  if (tempPhp) {
+                    currentOutput.php = tempPhp[1].trim();
+                    phpCodeEl.textContent = currentOutput.php;
+                  }
+                }
+              } catch (e) {
+                // Ignore parsing errors
+              }
+            }
+          }
+        }
+
+        parseAndDisplay(fullContent);
+      }
+
+      // Construction du prompt optimisé
+      function buildPrompt(siteName, siteDesc, siteType, siteStyle) {
+        return `Génère un site WordPress complet et professionnel avec ces spécifications :
+
+📋 SPÉCIFICATIONS :
+- Nom : ${siteName}
+- Objectif : ${siteDesc}
+- Type : ${siteType}
+- Style visuel : ${siteStyle}
+
+📦 LIVRABLES ATTENDUS (dans l'ordre) :
+
+1. Bloc HTML/CSS/JS autonome pour prévisualisation :
+\`\`\`html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${siteName}</title>
+  <style>
+    /* CSS moderne, responsive, style: ${siteStyle} */
+    :root { --primary: #3b82f6; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <!-- Structure HTML complète pour ${siteType} -->
+  <header><!-- Navigation --></header>
+  <main><!-- Contenu principal --></main>
+  <footer><!-- Footer --></footer>
+</body>
+</html>
+\`\`\`
+
+2. Bloc PHP WordPress (structure thème complet) :
+\`\`\`php
+<?php
+/**
+ * Theme Name: ${siteName}
+ * Description: ${siteDesc}
+ * Version: 1.0.0
+ * Author: WP Generator
+ * Text Domain: ${siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
+ */
+
+// Code PHP WordPress sécurisé et fonctionnel
+// Avec functions.php, index.php, header.php, footer.php combinés
+// Utilise les best practices WordPress (escaping, sanitization, hooks)
+?>
+\`\`\`
+
+⚠️ RÈGLES DE SÉCURITÉ OBLIGATOIRES :
+- Toujours échapper les outputs : esc_html(), esc_attr(), wp_kses()
+- Toujours sanitiser les inputs : sanitize_text_field(), sanitize_email()
+- Utiliser wp_nonce_field() pour les formulaires
+- Utiliser check_admin_referer() pour vérifier les nonces
+
+🎨 STYLE VISUEL : ${siteStyle}`;
+      }
+
+      // Parse et affiche le contenu
+      function parseAndDisplay(content) {
+        const htmlMatch = content.match(/```html\s*([\s\S]*?)```/i);
+        const phpMatch = content.match(/```php\s*([\s\S]*?)```/i);
+        
+        currentOutput.html = htmlMatch ? htmlMatch[1].trim() : '<h1>HTML non trouvé</h1>';
+        currentOutput.php = phpMatch ? phpMatch[1].trim() : '<?php // PHP non trouvé ?>';
+        currentOutput.css = '';
+
+        htmlCodeEl.textContent = currentOutput.html;
+        phpCodeEl.textContent = currentOutput.php;
+        
+        const blob = new Blob([currentOutput.html], { type: 'text/html' });
+        previewFrame.src = URL.createObjectURL(blob);
+      }
 
       // Copier
       copyBtn.addEventListener('click', () => {
@@ -243,7 +370,7 @@ Retourne EXACTEMENT deux blocs de code markdown, sans aucun texte explicatif aut
         });
       });
 
-      // Télécharger
+      // Télécharger fichier unique
       downloadBtn.addEventListener('click', () => {
         const activeTab = document.querySelector('.tab.active').dataset.tab;
         const content = activeTab === 'php' ? currentOutput.php : currentOutput.html;
@@ -258,6 +385,82 @@ Retourne EXACTEMENT deux blocs de code markdown, sans aucun texte explicatif aut
         a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
+      });
+
+      // Télécharger ZIP
+      downloadZipBtn.addEventListener('click', async () => {
+        const siteName = document.getElementById('siteName').value.trim();
+        const slug = siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        
+        const zip = new JSZip();
+        const themeFolder = zip.folder(slug);
+        
+        themeFolder.file('style.css', `/*
+Theme Name: ${siteName}
+Description: ${document.getElementById('siteDesc').value}
+Version: 1.0.0
+Author: WP Generator
+Text Domain: ${slug}
+*/
+
+/* CSS généré */
+:root { --primary: #3b82f6; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: system-ui, sans-serif; line-height: 1.6; }`);
+        
+        themeFolder.file('index.php', currentOutput.php || '<?php get_header(); ?>\n<main><?php while (have_posts()) : the_post(); the_content(); endwhile; ?></main>\n<?php get_footer(); ?>');
+        
+        themeFolder.file('functions.php', `<?php
+/**
+ * Functions for ${siteName}
+ */
+
+function ${slug.replace(/-/g, '_')}_scripts() {
+    wp_enqueue_style('${slug}-style', get_stylesheet_uri());
+}
+add_action('wp_enqueue_scripts', '${slug.replace(/-/g, '_')}_scripts');
+
+function ${slug.replace(/-/g, '_')}_setup() {
+    add_theme_support('title-tag');
+    add_theme_support('post-thumbnails');
+    register_nav_menus(array('primary' => __('Primary Menu', '${slug}')));
+}
+add_action('after_setup_theme', '${slug.replace(/-/g, '_')}_setup');
+?>`);
+        
+        themeFolder.file('header.php', `<!DOCTYPE html>
+<html <?php language_attributes(); ?>>
+<head>
+    <meta charset="<?php bloginfo('charset'); ?>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?php wp_head(); ?>
+</head>
+<body <?php body_class(); ?>>
+<header>
+    <h1><a href="<?php echo esc_url(home_url('/')); ?>"><?php bloginfo('name'); ?></a></h1>
+    <nav><?php wp_nav_menu(array('theme_location' => 'primary')); ?></nav>
+</header>
+<main>`);
+        
+        themeFolder.file('footer.php', `</main>
+<footer>
+    <p>&copy; <?php echo date('Y'); ?> <?php bloginfo('name'); ?></p>
+</footer>
+<?php wp_footer(); ?>
+</body>
+</html>`);
+
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${slug}-theme.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        const original = downloadZipBtn.textContent;
+        downloadZipBtn.textContent = '✅ ZIP téléchargé !';
+        setTimeout(() => downloadZipBtn.textContent = original, 2000);
       });
 
       function showStatus(msg, type) {
