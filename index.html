@@ -3,104 +3,59 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WP Generator — Dyad Style</title>
+  <title>WP Generator</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --surface-hover: #1c2333;
-      --border: #30363d;
-      --text: #e6edf3;
-      --text-muted: #8b949e;
-      --primary: #58a6ff;
-      --primary-bg: #0d419d;
-      --green: #3fb950;
-      --red: #f85149;
-      --orange: #d29922;
-      --purple: #bc8cff;
-      --sidebar-w: 280px;
-      --chat-w: 420px;
-    }
+    :root { --bg: #0d1117; --surface: #161b22; --border: #30363d; --text: #e6edf3; --text-muted: #8b949e; --primary: #58a6ff; --primary-bg: #0d419d; --green: #3fb950; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; }
-
-    /* ===== SIDEBAR GAUCHE ===== */
-    .sidebar { width: var(--sidebar-w); background: var(--bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
-    .sidebar-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .sidebar { width: 280px; background: var(--bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+    .sidebar-header { padding: 1rem; border-bottom: 1px solid var(--border); }
     .sidebar-header h2 { font-size: 0.9rem; font-weight: 600; }
-    .btn-icon { background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); width: 32px; height: 32px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
-    .btn-icon:hover { background: var(--surface-hover); color: var(--text); }
+    .btn-icon { background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+    .btn-icon:hover { background: var(--surface); color: var(--text); }
     .version-list { flex: 1; overflow-y: auto; padding: 0.5rem; }
-    .version-item { padding: 0.625rem 0.75rem; border-radius: 6px; cursor: pointer; margin-bottom: 2px; transition: all 0.15s; border: 1px solid transparent; }
+    .version-item { padding: 0.625rem 0.75rem; border-radius: 6px; cursor: pointer; margin-bottom: 2px; border: 1px solid transparent; }
     .version-item:hover { background: var(--surface); }
     .version-item.active { background: var(--surface); border-color: var(--primary); }
     .version-item .v-number { font-weight: 600; color: var(--primary); font-size: 0.8rem; }
-    .version-item .v-label { font-size: 0.8rem; color: var(--text); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .version-item .v-label { font-size: 0.8rem; color: var(--text); margin-top: 2px; }
     .version-item .v-time { font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
     .sidebar-footer { padding: 0.75rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; }
-    .sidebar-footer .btn-icon { flex: 1; width: auto; font-size: 0.75rem; gap: 4px; }
-
-    /* ===== ZONE CENTRALE (Chat + Code) ===== */
+    .sidebar-footer .btn-icon { flex: 1; width: auto; font-size: 0.75rem; }
     .center { flex: 1; display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--border); }
-    
-    /* Tabs */
-    .center-tabs { display: flex; background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 1rem; flex-shrink: 0; }
-    .center-tab { padding: 0.625rem 1rem; font-size: 0.8rem; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+    .center-tabs { display: flex; background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 1rem; }
+    .center-tab { padding: 0.625rem 1rem; font-size: 0.8rem; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; }
     .center-tab:hover { color: var(--text); }
     .center-tab.active { color: var(--text); border-bottom-color: var(--primary); }
     .center-tab .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
     .dot-green { background: var(--green); }
-    .dot-orange { background: var(--orange); }
-    .dot-purple { background: var(--purple); }
-
-    /* Code Panel */
     .code-panel { flex: 1; overflow-y: auto; padding: 1rem; }
-    .code-block { background: #0d1117; border: 1px solid var(--border); border-radius: 6px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; line-height: 1.6; padding: 1rem; color: #c9d1d9; white-space: pre-wrap; word-break: break-all; }
-    .code-header { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem; background: var(--surface); border: 1px solid var(--border); border-bottom: none; border-radius: 6px 6px 0 0; font-size: 0.75rem; color: var(--text-muted); }
-    .code-header + .code-block { border-radius: 0 0 6px 6px; }
+    .code-block { background: #0d1117; border: 1px solid var(--border); border-radius: 6px; font-family: 'SF Mono', monospace; font-size: 0.8rem; line-height: 1.6; padding: 1rem; color: #c9d1d9; white-space: pre-wrap; }
+    .code-header { display: flex; justify-content: space-between; padding: 0.5rem 1rem; background: var(--surface); border: 1px solid var(--border); border-bottom: none; border-radius: 6px 6px 0 0; font-size: 0.75rem; color: var(--text-muted); }
     .empty-code { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
-    .empty-code-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.3; }
-
-    /* Chat Area */
-    .chat-area { border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0; display: flex; flex-direction: column; height: 35%; }
+    .chat-area { border-top: 1px solid var(--border); background: var(--surface); height: 35%; display: flex; flex-direction: column; }
     .chat-messages { flex: 1; overflow-y: auto; padding: 0.75rem 1rem; }
     .chat-msg { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
     .chat-msg.user { flex-direction: row-reverse; }
     .chat-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; }
-    .chat-msg.user .chat-avatar { background: var(--purple); }
+    .chat-msg.user .chat-avatar { background: #a855f7; }
     .chat-bubble { max-width: 80%; padding: 0.5rem 0.75rem; border-radius: 12px; font-size: 0.825rem; line-height: 1.5; }
     .chat-msg.assistant .chat-bubble { background: var(--bg); border: 1px solid var(--border); }
     .chat-msg.user .chat-bubble { background: var(--primary-bg); border: 1px solid rgba(88,166,255,0.2); }
-    .chat-bubble .v-badge { font-size: 0.65rem; background: var(--primary); color: white; padding: 1px 6px; border-radius: 9999px; margin-left: 6px; }
-    
-    .chat-input-area { padding: 0.75rem 1rem; display: flex; gap: 0.5rem; align-items: flex-end; border-top: 1px solid var(--border); }
-    .chat-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.625rem 0.875rem; color: var(--text); font-size: 0.825rem; resize: none; min-height: 40px; max-height: 100px; font-family: inherit; }
+    .chat-input-area { padding: 0.75rem 1rem; display: flex; gap: 0.5rem; border-top: 1px solid var(--border); }
+    .chat-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.625rem 0.875rem; color: var(--text); font-size: 0.825rem; resize: none; min-height: 40px; font-family: inherit; }
     .chat-input:focus { outline: none; border-color: var(--primary); }
-    .chat-input::placeholder { color: var(--text-muted); }
-    .chat-send { background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
+    .chat-send { background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .chat-send:hover { background: #79b8ff; }
     .chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    /* ===== ZONE DROITE (Preview) ===== */
-    .preview-panel { width: 50%; min-width: 400px; display: flex; flex-direction: column; background: var(--bg); flex-shrink: 0; }
+    .preview-panel { width: 50%; min-width: 400px; display: flex; flex-direction: column; background: var(--bg); }
     .preview-header { display: flex; justify-content: space-between; align-items: center; padding: 0.625rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; background: var(--surface); }
-    .preview-header h3 { font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
-    .preview-url { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.25rem 0.625rem; font-size: 0.7rem; color: var(--text-muted); font-family: monospace; }
+    .preview-header h3 { font-size: 0.8rem; font-weight: 600; }
     .preview-frame { flex: 1; border: none; background: white; width: 100%; height: 100%; }
-    .preview-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); }
-    .preview-empty-icon { font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; }
-
-    /* Status bar */
-    .status-bar { display: none; }
-
-    /* Scrollbar */
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #484f58; }
-
-    /* Loading */
     .typing-dots span { animation: blink 1.4s infinite; font-size: 1.2rem; }
     .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
     .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
@@ -109,11 +64,10 @@
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-header">
     <h2>🟣 WP Generator</h2>
-    <button class="btn-icon" onclick="newProject()" title="Nouveau projet">＋</button>
+    <button class="btn-icon" onclick="newProject()" style="float:right;">＋</button>
   </div>
   <div class="version-list" id="versionList">
     <div style="text-align:center; padding: 2rem 1rem; color: var(--text-muted); font-size: 0.8rem;">
@@ -122,29 +76,28 @@
     </div>
   </div>
   <div class="sidebar-footer">
-    <button class="btn-icon" onclick="exportProject()" title="Exporter">💾 Exporter</button>
-    <button class="btn-icon" onclick="document.getElementById('importInput').click()" title="Importer">📂 Importer</button>
+    <button class="btn-icon" onclick="exportProject()">💾 Exporter</button>
+    <button class="btn-icon" onclick="document.getElementById('importInput').click()">📂 Importer</button>
     <input type="file" id="importInput" accept=".json" style="display:none" onchange="importProject(event)">
-    <button class="btn-icon" onclick="downloadZip()" title="Télécharger ZIP">📦 ZIP</button>
+    <button class="btn-icon" onclick="downloadZip()">📦 ZIP</button>
   </div>
 </aside>
 
-<!-- CENTER -->
 <div class="center">
   <div class="center-tabs">
     <div class="center-tab active" onclick="switchCodeTab('html')"><span class="dot dot-green"></span>HTML</div>
-    <div class="center-tab" onclick="switchCodeTab('php')"><span class="dot dot-orange"></span>PHP</div>
-    <div class="center-tab" onclick="switchCodeTab('full')"><span class="dot dot-purple"></span>Full ZIP</div>
+    <div class="center-tab" onclick="switchCodeTab('php')"><span class="dot dot-green"></span>PHP</div>
+    <div class="center-tab" onclick="switchCodeTab('full')"><span class="dot dot-green"></span>Full ZIP</div>
   </div>
 
   <div class="code-panel" id="codePanel">
     <div class="empty-code" id="codeEmpty">
-      <div class="empty-code-icon">✦</div>
+      <div style="font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.3;">✦</div>
       <div style="font-size: 0.9rem; margin-bottom: 0.25rem;">Bienvenue</div>
       <div style="font-size: 0.8rem;">Décrivez votre site dans le chat ci-dessous</div>
     </div>
     <div id="codeContent" style="display:none;">
-      <div class="code-header"><span id="codeFileLabel">index.html</span><button class="btn-icon" onclick="copyCode()" style="width:28px;height:28px;font-size:0.8rem;" title="Copier">📋</button></div>
+      <div class="code-header"><span id="codeFileLabel">index.html</span><button class="btn-icon" onclick="copyCode()" style="width:28px;height:28px;font-size:0.8rem;">📋</button></div>
       <div class="code-block" id="codeBlock"></div>
     </div>
   </div>
@@ -163,20 +116,15 @@
   </div>
 </div>
 
-<!-- PREVIEW -->
 <div class="preview-panel">
   <div class="preview-header">
-    <h3><span class="dot dot-green"></span> Aperçu</h3>
-    <div style="display:flex; gap:0.5rem; align-items:center;">
-      <span class="preview-url">preview</span>
-      <button class="btn-icon" onclick="openPreviewWindow()" title="Ouvrir dans un nouvel onglet" style="width:28px;height:28px;font-size:0.8rem;">↗</button>
-    </div>
+    <h3> Aperçu</h3>
+    <button class="btn-icon" onclick="openPreviewWindow()" style="width:28px;height:28px;font-size:0.8rem;">↗</button>
   </div>
   <iframe class="preview-frame" id="previewFrame" sandbox="allow-same-origin allow-scripts"></iframe>
 </div>
 
 <script>
-// ===== STATE =====
 let projects = JSON.parse(localStorage.getItem('wp_gen_projects') || '[]');
 let currentProjectId = null;
 let currentVersion = 0;
@@ -185,21 +133,15 @@ let chatHistory = [];
 let isGenerating = false;
 let previewWindow = null;
 
-// ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
   renderSidebar();
-  autoResizeChatInput();
-});
-
-function autoResizeChatInput() {
   const input = document.getElementById('chatInput');
   input.addEventListener('input', () => {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 100) + 'px';
   });
-}
+});
 
-// ===== PROJECTS =====
 function newProject() {
   const id = Date.now();
   const project = {
@@ -218,7 +160,6 @@ function newProject() {
   renderSidebar();
   renderChat();
   renderCode();
-  setStatus('Nouveau projet créé');
 }
 
 function selectProject(id) {
@@ -238,7 +179,6 @@ function selectProject(id) {
   renderChat();
   renderCode();
   updatePreview();
-  setStatus(`Projet chargé`);
 }
 
 function saveProjects() {
@@ -249,7 +189,6 @@ function getCurrentProject() {
   return projects.find(p => p.id === currentProjectId);
 }
 
-// ===== SIDEBAR =====
 function renderSidebar() {
   const list = document.getElementById('versionList');
   if (projects.length === 0) {
@@ -262,32 +201,22 @@ function renderSidebar() {
     return `<div class="version-item ${isActive ? 'active' : ''}" onclick="selectProject(${p.id})">
       <div class="v-number">v${p.versions.length}.0 — ${p.name}</div>
       <div class="v-label">${lastV ? (lastV.label || 'Site généré') : 'Aucune version'}</div>
-      <div class="v-time">${formatTime(p.createdAt)}</div>
+      <div class="v-time">${new Date(p.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>
     </div>`;
   }).join('');
 }
 
-function formatTime(iso) {
-  const d = new Date(iso);
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-}
-
-// ===== CHAT =====
 function renderChat() {
   const container = document.getElementById('chatMessages');
   container.innerHTML = chatHistory.map(msg => {
     if (msg.role === 'assistant') {
-      return `<div class="chat-msg assistant"><div class="chat-avatar">WP</div><div class="chat-bubble">${formatContent(msg.content)}</div></div>`;
+      return `<div class="chat-msg assistant"><div class="chat-avatar">WP</div><div class="chat-bubble">${escapeHtml(msg.content).replace(/\n/g, '<br>')}</div></div>`;
     } else {
-      const vBadge = msg.version ? `<span class="v-badge">v${msg.version}</span>` : '';
+      const vBadge = msg.version ? `<span style="font-size:0.65rem; background:var(--primary); color:white; padding:1px 6px; border-radius:9999px; margin-left:6px;">v${msg.version}</span>` : '';
       return `<div class="chat-msg user"><div class="chat-avatar">👤</div><div class="chat-bubble">${escapeHtml(msg.content)}${vBadge}</div></div>`;
     }
   }).join('');
   container.scrollTop = container.scrollHeight;
-}
-
-function formatContent(text) {
-  return escapeHtml(text).replace(/\n/g, '<br>');
 }
 
 function escapeHtml(str) {
@@ -308,12 +237,9 @@ async function sendMessage() {
   const content = input.value.trim();
   if (!content || isGenerating) return;
 
-  // Init project if needed
   if (!currentProjectId) newProject();
-
   const project = getCurrentProject();
   
-  // Add user message
   chatHistory.push({ role: 'user', content });
   project.chat = chatHistory;
   renderChat();
@@ -322,10 +248,15 @@ async function sendMessage() {
 
   isGenerating = true;
   document.getElementById('chatSend').disabled = true;
-  setStatus('Génération en cours...');
 
-  // Add typing indicator
-  const typingId = addTypingIndicator();
+  const typingId = 'typing-' + Date.now();
+  const container = document.getElementById('chatMessages');
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'chat-msg assistant';
+  typingDiv.id = typingId;
+  typingDiv.innerHTML = `<div class="chat-avatar">WP</div><div class="chat-bubble"><div class="typing-dots"><span>.</span><span>.</span><span>.</span></div></div>`;
+  container.appendChild(typingDiv);
+  container.scrollTop = container.scrollHeight;
 
   try {
     const prompt = buildPrompt(content, project);
@@ -345,14 +276,12 @@ async function sendMessage() {
 
     const reply = data.choices[0].message.content;
     
-    // Extract code
     const htmlMatch = reply.match(/```html\s*([\s\S]*?)```/i);
     const phpMatch = reply.match(/```php\s*([\s\S]*?)```/i);
     
     if (htmlMatch) currentOutput.html = htmlMatch[1].trim();
     if (phpMatch) currentOutput.php = phpMatch[1].trim();
 
-    // Save version
     currentVersion++;
     project.versions.push({
       version: currentVersion,
@@ -362,7 +291,6 @@ async function sendMessage() {
       label: content.substring(0, 50) + (content.length > 50 ? '...' : '')
     });
 
-    // Update project name from first version
     if (project.versions.length === 1) {
       project.name = content.substring(0, 30) + (content.length > 30 ? '...' : '');
     }
@@ -371,20 +299,18 @@ async function sendMessage() {
     project.chat = chatHistory;
     saveProjects();
 
-    removeTypingIndicator(typingId);
+    document.getElementById(typingId).remove();
     renderChat();
     renderCode();
     renderSidebar();
     updatePreview();
-    setStatus(`Version ${currentVersion} générée`);
 
   } catch (err) {
-    removeTypingIndicator(typingId);
+    document.getElementById(typingId).remove();
     chatHistory.push({ role: 'assistant', content: `❌ Erreur: ${err.message}` });
     project.chat = chatHistory;
     saveProjects();
     renderChat();
-    setStatus('Erreur');
   } finally {
     isGenerating = false;
     document.getElementById('chatSend').disabled = false;
@@ -396,36 +322,17 @@ function buildPrompt(userInput, project) {
   let prompt = `Tu es un expert WordPress senior. Génère un site WordPress complet.\n\n`;
   
   if (isImprovement) {
-    prompt += `INSTRUCTION: ${userInput}\n\n`;
-    prompt += `Modifie/améliore le code existant selon cette instruction.\n\n`;
-    prompt += `Code HTML actuel (début):\n${currentOutput.html.substring(0, 300)}...\n\n`;
-    prompt += `Code PHP actuel (début):\n${currentOutput.php.substring(0, 300)}...\n\n`;
+    prompt += `INSTRUCTION: ${userInput}\n\nModifie/améliore le code existant.\n\n`;
+    prompt += `Code HTML actuel:\n${currentOutput.html.substring(0, 300)}...\n\n`;
+    prompt += `Code PHP actuel:\n${currentOutput.php.substring(0, 300)}...\n\n`;
   } else {
     prompt += `DESCRIPTION: ${userInput}\n\n`;
   }
 
-  prompt += `Retourne EXACTEMENT 2 blocs de code markdown:\n1. \`\`\`html\n[Code HTML/CSS/JS complet et autonome avec <!DOCTYPE html>]\n\`\`\`\n2. \`\`\`php\n[Code PHP WordPress complet (functions.php, index.php, header.php, footer.php)]\n\`\`\`\n\nRègles:\n- HTML: design moderne, responsive, CSS intégré dans <style>\n- PHP: escaping (esc_html, esc_attr), sanitization, hooks WordPress`;
+  prompt += `Retourne EXACTEMENT 2 blocs de code markdown:\n1. \`\`\`html\n[Code HTML/CSS/JS complet avec <!DOCTYPE html>]\n\`\`\`\n2. \`\`\`php\n[Code PHP WordPress complet]\n\`\`\``;
   return prompt;
 }
 
-function addTypingIndicator() {
-  const id = 'typing-' + Date.now();
-  const container = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.className = 'chat-msg assistant';
-  div.id = id;
-  div.innerHTML = `<div class="chat-avatar">WP</div><div class="chat-bubble"><div class="typing-dots"><span>.</span><span>.</span><span>.</span></div></div>`;
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-  return id;
-}
-
-function removeTypingIndicator(id) {
-  const el = document.getElementById(id);
-  if (el) el.remove();
-}
-
-// ===== CODE PANEL =====
 let activeCodeTab = 'html';
 
 function switchCodeTab(tab) {
@@ -461,35 +368,28 @@ function renderCode() {
       break;
     case 'full':
       label.textContent = 'Structure du thème ZIP';
-      codeBlock.textContent = `📁 ${getCurrentProject()?.name || 'site'}/\n├── style.css       (header thème WP)\n├── index.php       (The Loop)\n├── functions.php   (hooks & setup)\n├── header.php      (en-tête)\n├── footer.php      (pied de page)\n└── assets/         (CSS/JS/images)`;
+      codeBlock.textContent = `📁 ${getCurrentProject()?.name || 'site'}/\n├── style.css\n├── index.php\n├── functions.php\n├── header.php\n└── footer.php`;
       break;
   }
 }
 
 function copyCode() {
-  let text = '';
-  switch (activeCodeTab) {
-    case 'html': text = currentOutput.html; break;
-    case 'php': text = currentOutput.php; break;
-    case 'full': text = 'Utilisez le bouton ZIP pour télécharger la structure complète.'; break;
-  }
-  navigator.clipboard.writeText(text).then(() => setStatus('Code copié !'));
+  let text = activeCodeTab === 'html' ? currentOutput.html : currentOutput.php;
+  navigator.clipboard.writeText(text).then(() => alert('Code copié !'));
 }
 
-// ===== PREVIEW =====
 function updatePreview() {
   if (!currentOutput.html) return;
   const blob = new Blob([currentOutput.html], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
-  const frame = document.getElementById('previewFrame');
-  frame.src = url;
+  document.getElementById('previewFrame').src = url;
   if (previewWindow && !previewWindow.closed) {
     previewWindow.location.href = url;
   }
 }
 
 function openPreviewWindow() {
-  if (!currentOutput.html) { setStatus('Aucun aperçu disponible'); return; }
+  if (!currentOutput.html) { alert('Aucun aperçu disponible'); return; }
   if (!previewWindow || previewWindow.closed) {
     previewWindow = window.open('', '_blank', 'width=1200,height=800');
   }
@@ -499,16 +399,14 @@ function openPreviewWindow() {
   previewWindow.focus();
 }
 
-// ===== EXPORT / IMPORT =====
 function exportProject() {
-  if (!currentProjectId) { setStatus('Aucun projet à exporter'); return; }
+  if (!currentProjectId) { alert('Aucun projet à exporter'); return; }
   const project = getCurrentProject();
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `${project.name.replace(/\s+/g, '-').toLowerCase()}-v${currentVersion}.json`;
   a.click();
-  setStatus('Projet exporté');
 }
 
 function importProject(event) {
@@ -523,9 +421,8 @@ function importProject(event) {
       projects.unshift(project);
       saveProjects();
       selectProject(project.id);
-      setStatus(`Projet importé`);
     } catch (err) {
-      setStatus('Erreur d\'import: ' + err.message);
+      alert('Erreur d\'import: ' + err.message);
     }
   };
   reader.readAsText(file);
@@ -533,31 +430,23 @@ function importProject(event) {
 }
 
 async function downloadZip() {
-  if (!currentOutput.html && !currentOutput.php) { setStatus('Aucun code à télécharger'); return; }
+  if (!currentOutput.html && !currentOutput.php) { alert('Aucun code à télécharger'); return; }
   const project = getCurrentProject();
   const slug = (project?.name || 'site').toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const zip = new JSZip();
   const folder = zip.folder(slug);
 
-  folder.file('style.css', `/*\nTheme Name: ${project?.name || 'Site'}\nDescription: Généré par WP Generator\nVersion: ${currentVersion}.0\nAuthor: WP Generator\nText Domain: ${slug}\n*/\n:root { --primary: #3b82f6; }\n* { margin: 0; padding: 0; box-sizing: border-box; }\nbody { font-family: system-ui, sans-serif; }`);
+  folder.file('style.css', `/*\nTheme Name: ${project?.name || 'Site'}\nVersion: ${currentVersion}.0\n*/\n`);
   folder.file('index.php', currentOutput.php || '<?php get_header(); ?>\n<main><?php while(have_posts()): the_post(); the_content(); endwhile; ?></main>\n<?php get_footer(); ?>');
-  folder.file('functions.php', `<?php\nfunction ${slug.replace(/-/g, '_')}_setup() {\n  add_theme_support('title-tag');\n  add_theme_support('post-thumbnails');\n  register_nav_menus(['primary' => 'Menu principal']);\n}\nadd_action('after_setup_theme', '${slug.replace(/-/g, '_')}_setup');\n?>`);
-  folder.file('header.php', `<!DOCTYPE html>\n<html <?php language_attributes(); ?>>\n<head>\n  <meta charset="<?php bloginfo('charset'); ?>">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <?php wp_head(); ?>\n</head>\n<body <?php body_class(); ?>>\n<header>\n  <h1><a href="<?php echo esc_url(home_url('/')); ?>"><?php bloginfo('name'); ?></a></h1>\n  <nav><?php wp_nav_menu(['theme_location' => 'primary']); ?></nav>\n</header>\n<main>`);
-  folder.file('footer.php', `</main>\n<footer>\n  <p>&copy; <?php echo date('Y'); ?> <?php bloginfo('name'); ?></p>\n</footer>\n<?php wp_footer(); ?>\n</body>\n</html>`);
+  folder.file('functions.php', `<?php\nfunction ${slug.replace(/-/g, '_')}_setup() {\n  add_theme_support('title-tag');\n  add_theme_support('post-thumbnails');\n}\nadd_action('after_setup_theme', '${slug.replace(/-/g, '_')}_setup');\n?>`);
+  folder.file('header.php', `<!DOCTYPE html>\n<html <?php language_attributes(); ?>>\n<head><meta charset="<?php bloginfo('charset'); ?>"><?php wp_head(); ?></head>\n<body <?php body_class(); ?>>\n<header><h1><a href="<?php echo esc_url(home_url('/')); ?>"><?php bloginfo('name'); ?></a></h1></header>\n<main>`);
+  folder.file('footer.php', `</main>\n<footer><p>&copy; <?php echo date('Y'); ?> <?php bloginfo('name'); ?></p></footer>\n<?php wp_footer(); ?>\n</body>\n</html>`);
 
   const content = await zip.generateAsync({ type: 'blob' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(content);
   a.download = `${slug}-v${currentVersion}.zip`;
   a.click();
-  setStatus('ZIP téléchargé');
-}
-
-// ===== STATUS =====
-function setStatus(msg) {
-  const statusEl = document.querySelector('.status-bar');
-  if (statusEl) statusEl.textContent = msg;
-  console.log('[Status]', msg);
 }
 </script>
 
